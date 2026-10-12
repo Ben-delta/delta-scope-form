@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Delta Scope Form">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f4e8c">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Delta Level 2 Scoping v1.6</title>
+<style>
+  :root{--ink:#1d2430;--mut:#5b6575;--line:#d5dae2;--bg:#f4f6f9;--card:#fff;--acc:#1f4e8c;--err:#b42318;--errbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--ok:#1e7a3c;--okbg:#e7f5ec;--hold:#fff3c4}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header.top{background:var(--acc);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header.top h1{font-size:18px;margin:0;font-weight:650}
+  .ver{font-size:12px;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:10px}
+  .saved{margin-left:auto;font-size:12px;opacity:.9}
+  main{max-width:1180px;margin:0 auto;padding:12px 12px 96px}
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
+  h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  h2 .n{background:var(--acc);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+  h3.grp{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--acc);margin:6px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+  .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  label.f,div.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut);min-width:0}
+  .f .l{font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
+  .req::after{content:" *";color:var(--err)}
+  input,select,textarea{font:inherit;font-size:16px;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);width:100%;min-width:0}
+  textarea{min-height:70px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid #9bb8e3;border-color:var(--acc)}
+  .bad{border-color:var(--err)!important;background:var(--errbg)}
+  .msg{font-size:12px;color:var(--err)}
+  .hint{font-size:12px;color:var(--mut)}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pair small{display:block;font-size:11px;color:var(--mut);margin-bottom:2px}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:7px;padding:10px 14px;cursor:pointer;background:#fff;color:var(--ink);font-size:15px;min-height:44px}
+  .seg input{width:auto}
+  .seg.bad label{border-color:var(--err)}
+  button{font:inherit;font-size:15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer}
+  button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  button.ok{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.sm{padding:5px 10px;font-size:13px}
+  button.mic{padding:2px 7px;font-size:13px;line-height:1.2;border-radius:12px}
+  button.mic.on{background:#fde7e4;border-color:var(--err);color:var(--err)}
+  .src-row{display:grid;grid-template-columns:1fr 150px auto;gap:6px;margin-bottom:6px;align-items:start}
+  .tipbar{background:#eef4fc;border:1px solid #c9daf2;color:#1f4e8c;border-radius:8px;padding:8px 10px;font-size:14px;margin:8px 0}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1;min-height:46px;font-weight:600}
+  .tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .row{border:1px solid var(--line);border-left:5px solid #9aa5b5;border-radius:9px;padding:10px;margin:10px 0;background:#fff}
+  .row.st-known{border-left-color:var(--ok)} .row.st-assumed{border-left-color:#2f6fca} .row.st-hold{border-left-color:#d4a106;background:#fffdf3}
+  .row.has-err{box-shadow:0 0 0 1px var(--err)}
+  .rowhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .rowhead .t{font-weight:650}
+  .pill{font-size:12px;border-radius:10px;padding:1px 8px;border:1px solid var(--line);color:var(--mut)}
+  .pill.e{background:var(--errbg);color:var(--err);border-color:#f3b5ad}
+  .pill.g{background:var(--okbg);color:var(--ok);border-color:#a9dcb9}
+  .pill.h{background:var(--hold);color:#6b5200;border-color:#ecd27a}
+  .pill.v{background:#e7ecf3;color:var(--acc);border-color:#b9c7dc}
+  .rowhead .sp{margin-left:auto;display:flex;gap:4px}
+  .rgrid{display:grid;gap:8px;grid-template-columns:repeat(12,1fr)}
+  .c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c9{grid-column:span 9}.c12{grid-column:span 12}
+  .warns{margin-top:6px;font-size:12px;color:var(--warn)}
+  .warns div::before{content:"⚠ "}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:8px;justify-content:center;z-index:6}
+  .bar button{flex:0 1 220px;min-height:44px}
+  .result{border-radius:9px;padding:12px;margin-top:10px}
+  .result.fail{background:var(--errbg);border:1px solid #f3b5ad}
+  .result.pass{background:var(--okbg);border:1px solid #a9dcb9}
+  .result ul{margin:6px 0 0;padding-left:20px}
+  .stats{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .stat{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;font-size:13px}
+  .stat b{font-size:16px;display:block}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+  table.pv{border-collapse:collapse;width:100%;font-size:13px;min-width:900px}
+  table.pv th,table.pv td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  table.pv th{background:#eef1f5}
+  table.pv tr.hold td{background:var(--hold)}
+  .attest{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fafbfc}
+  .attest input{width:22px;height:22px;flex:0 0 auto;margin-top:1px}
+  .attest.bad{border-color:var(--err);background:var(--errbg)}
+  details.rules,details.prior{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-top:10px}
+  details summary{cursor:pointer;font-weight:650}
+  details.rules ol,details.rules ul{padding-left:20px;margin:6px 0}
+  details.rules h3{font-size:14px;margin:12px 0 4px}
+  .exp{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .landing{font-size:13px;color:var(--mut);margin-top:8px}
+  .empty{color:var(--mut);font-style:italic;padding:8px 0}
+  footer{color:var(--mut);font-size:12px;text-align:center;padding:10px}
+  /* scope walk */
+  .tradegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+  .tradegrid label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:12px;min-height:54px;cursor:pointer;background:#fff;font-size:15px}
+  .tradegrid label.on{border-color:var(--acc);background:#eef4fc}
+  .tradegrid input{width:24px;height:24px;flex:0 0 auto}
+  .tradegrid .cnt{margin-left:auto;font-size:12px;color:var(--mut)}
+  .walk{border:2px solid var(--acc);border-radius:12px;padding:14px;background:#fff}
+  .walk .prog{font-size:13px;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .walk .prog b{color:var(--ink);font-size:15px}
+  .dots{display:flex;gap:4px;margin:8px 0 12px}
+  .dots span{flex:1;height:6px;border-radius:3px;background:#dfe4eb}
+  .dots span.done{background:var(--acc)} .dots span.cur{background:#7fa3d6}
+  .walk .q{font-size:20px;font-weight:650;margin:2px 0 8px;display:flex;align-items:center;gap:8px}
+  .walk input.big,.walk textarea.big{font-size:20px;padding:12px}
+  .choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .choices button{min-height:56px;font-size:17px;text-align:left;padding:10px 12px}
+  .choices button.sel{background:var(--acc);border-color:var(--acc);color:#fff}
+  .choices button small{display:block;font-size:12px;opacity:.8;font-weight:400}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .quick button{min-height:44px}
+  .tips{margin-top:10px;font-size:14px;background:#fff8e6;border:1px solid #f0d58c;border-radius:8px;padding:8px 10px;color:#6b4a00}
+  .tips div::before{content:"Tip: ";font-weight:650}
+  .wnav{display:flex;gap:8px;margin-top:14px}
+  .wnav button{min-height:52px;font-size:17px;flex:1}
+  .wnav button.back{flex:0 0 96px}
+  .itemsum{border:1px solid var(--line);border-radius:8px;padding:10px;background:#fafbfc;font-size:14px;margin:8px 0}
+  .itemsum b{font-size:15px}
+  .bigbtns{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+  .bigbtns button{min-height:58px;font-size:17px}
+  /* v1.3: projects + capture method */
+  .projrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .projrow .f{flex:1 1 280px}
+  label.filebtn{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;padding:8px 14px;cursor:pointer;background:#fff;color:var(--ink);font-size:15px;min-height:40px}
+  label.filebtn:focus-within{outline:2px solid #9bb8e3}
+  .subgrp{border:1px dashed #b9c7dc;border-radius:9px;padding:10px 12px;margin-top:14px;background:#fbfcfe}
+  .subhead{font-weight:650;color:var(--acc);margin-bottom:8px}
+  .subhead .hint{font-weight:400;display:block}
+  .cmq{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin:10px 0}
+  .cmq .seg label{padding:8px 14px;min-height:40px}
+  .cmres{margin:8px 0;padding:8px 10px;border-radius:8px;background:#eef1f5;font-size:14px}
+  .cmres.sug{background:#e7ecf3}
+  .cmres.met{background:var(--okbg)} .cmres.missed{background:var(--warnbg)} .cmres.bad{background:var(--errbg)}
+  .cmwarn{font-size:12px;color:var(--warn)}
+  .cmnote{background:#eef4fc;border:1px solid #c9daf2;color:#1f4e8c;border-radius:8px;padding:8px 10px;font-size:14px;margin:8px 0 0}
+  /* v1.5: field notes, stuck flags, trade navigation */
+  .fn{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:3px;font-weight:400}
+  .fn button{padding:2px 8px;font-size:12px;border-radius:10px;color:var(--mut);min-height:0}
+  .fn button.has{color:var(--acc);border-color:#9bb8e3;background:#eef4fc}
+  .fn button.stuck.on{background:#fde7e4;border-color:var(--err);color:var(--err);font-weight:600}
+  .fn .fnbox{flex:1 1 100%;display:flex;gap:4px;align-items:flex-start}
+  .fn textarea{min-height:44px;font-size:14px;padding:6px 8px}
+  .fn .fnmsg{flex:1 1 100%;font-size:11px;color:var(--warn)}
+  .fn [hidden]{display:none!important}
+  .rh{font-size:12px;color:#4a5a72}
+  .rh:empty{display:none}
+  .tradebar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+  .tradebar .tchip{padding:6px 10px;font-size:13px;border-radius:16px;min-height:36px}
+  .tradebar .tchip.cur{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  .tradebar .tchip.skip{text-decoration:line-through;color:var(--mut);background:#f1f2f4}
+  .tradebar .tchip small{opacity:.8}
+  .tradebar .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  ol.tord{margin:8px 0;padding-left:22px}
+  ol.tord li{padding:4px 0;border-bottom:1px solid #eef0f3}
+  ol.tord li .tl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  ol.tord li .tl .sp{margin-left:auto;display:flex;gap:4px}
+  .flagwrap{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+  .flagwrap table{min-width:700px}
+  tr.stuckrow td{background:#fdecea}
+  /* v1.6: banners + phone tap targets */
+  .banner{border-radius:9px;padding:10px 12px;margin:10px 0;font-size:15px;line-height:1.4}
+  .banner.stop{background:#fdecea;border:2px solid var(--err);color:#7a1610}
+  .banner.warn{background:var(--warnbg);border:2px solid #e0b44a;color:#5c3d00}
+  .banner b{display:block;font-size:16px;margin-bottom:2px}
+  button,select,input[type=checkbox],input[type=radio],label{touch-action:manipulation}
+  header.top .hbtn{background:#fff;color:var(--acc);border-color:#fff;font-weight:600;padding:6px 12px;font-size:14px;min-height:36px}
+  @media (max-width:760px){
+    .fn button{min-height:36px;padding:6px 12px;font-size:13px}
+    button.sm{min-height:40px;padding:8px 12px}
+    button.mic{min-height:34px;padding:4px 10px}
+    .tradebar .tchip{min-height:42px}
+    .rgrid{grid-template-columns:repeat(2,1fr)}
+    .c2,.c3,.c4{grid-column:span 1}.c5,.c9,.c12{grid-column:span 2}
+    .wide-m{grid-column:span 2}
+    header.top h1{font-size:16px}
+    main{padding:8px 8px 96px}
+    section.card{padding:12px}
+    .src-row{grid-template-columns:1fr 120px auto}
+    .bigbtns{grid-template-columns:1fr}
+    .choices{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Delta Level 2 Scoping</h1><span class="ver" id="ver">v1.6</span><span class="ver" id="tv-badge">Table v1 (benchmark)</span>
+  <span class="saved" id="saved">Not saved yet</span><button type="button" class="hbtn" id="btn-top-new" title="Start a blank project (this one stays saved on this device)">New / Clear</button>
+</header>
+<main>
+  <div class="banner stop" id="nojs-banner"><b>This form isn't running here.</b>You're probably looking at an email or file preview, which shows the page but can't run it, so nothing can be typed or tapped. Save the file, then open it in <b>Chrome</b> (Android) or <b>Safari/Chrome</b> from a web link (iPhone). See the instructions Ben sent.</div>
+  <div class="banner warn" id="store-banner" style="display:none"><b>This browser won't let the form save.</b>You can still fill it in and export, but closing or refreshing loses the work. Open the file in Safari or Chrome (not a preview, not a private tab), and export or send the project file before you close it.</div>
+  <section class="card" id="sec-project">
+    <h2>Project <span class="pill" id="proj-count"></span></h2>
+    <div class="projrow">
+      <label class="f"><span class="l">Project on this device</span><select id="proj-select" aria-label="Open a project saved on this device"></select></label>
+      <button type="button" id="btn-proj-new">New project</button>
+      <label class="filebtn" id="lbl-open"><input type="file" id="file-open" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>Open saved project (.xlsx)</label>
+      <button type="button" id="btn-share" disabled title="Unlocks once this version passes Check complete">Send project file</button>
+    </div>
+    <div class="hint" style="margin-top:6px">Each project saves separately on this device, so starting a new one never wipes another. The exported .xlsx is the project file: open it here on any device to continue from the right version, or send it to whoever is assigned.</div>
+    <div class="landing" id="proj-msg"></div>
+  </section>
+  <details class="rules" id="rules">
+    <summary>Rules (read-only)</summary>
+    <p class="hint">From the Level 2 Scoping Workbench, Rules tab (locked while we test). The form enforces these; you can't turn them off here.</p>
+    <h3>What this form makes</h3>
+    <ul>
+      <li>One Level 2 plan-set table. Your sketch, photos and plan set stay outside the form; the table points to them by Callout ID.</li>
+      <li>In damage, the damage defines the scope which defines the price. A damage job needs the inspection report and the damage source(s) first.</li>
+      <li>The Level 2 table is the benchmark of the details as stated today. The estimate is written from it, and the cost budget and RFPs are generated from it. Later findings and selections go into a new version (v2, v3…). The benchmark is never overwritten.</li>
+      <li>Level 2 is complete when the annotated visuals and this table are saved together in the agreed location. The form can only check the table; you confirm the sketch.</li>
+    </ul>
+    <h3>Row rules</h3>
+    <ol>
+      <li>Trade is a Cost Group from the official code list only. No free-text trades. CAB, CLN, DRY, PNT and the other codes are Delta's Cost Group codes, not Xactimate categories.</li>
+      <li>Start a new row when the Action or the Material changes. The same Trade can have many rows. "Carpet and pad" is two rows.</li>
+      <li>Every row has Callout ID, Trade, Action, Material, Location, Qty, Unit, Finish and Status.</li>
+      <li>Status is known, assumed or hold. Blank is not done.
+        <ul><li><b>known</b>: solid enough to treat as fact.</li>
+        <li><b>assumed</b>: filled so work can continue. The note must say what was assumed.</li>
+        <li><b>hold</b>: can't honestly fill specifics yet. Qty, Unit, Material and Finish can stay soft. Callout, Trade, Action, Location and Status are still required.</li></ul></li>
+      <li>Every Callout ID matches exactly one row. One row can carry several IDs.</li>
+      <li>A wrong Qty is fine (it changes in the next version). A Qty range is only allowed on a hold.</li>
+      <li><b>What versus what it takes</b> (Ben, 2026-10-08): Every prompt and preset asks for what something is (the material, the action, the quantity of the thing), not what it takes (labor hours, time, cost). That keeps scope from drifting into estimating.</li>
+    </ol>
+    <h3>Actions</h3>
+    <ul>
+      <li><b>remove only</b>: tear-out, no reinstall.</li>
+      <li><b>install only</b>: labor to install new or provided material; no material bought on this row.</li>
+      <li><b>remove and replace</b>: tear-out plus new install with materials.</li>
+      <li><b>replace</b>: new install with materials, no tear-out on this row. Paint = replace (a new coat with materials). Decided by Ben, 2026-10-08.</li>
+      <li><b>detach &amp; reset</b>: take off, put the same piece back. Not new material.</li>
+      <li><b>n/a</b>: General Conditions (GC) only.</li>
+    </ul>
+    <h3>Where things go (locked)</h3>
+    <ul>
+      <li>Floor protection goes under GC, not FLR. Tape, texture and primer stay inside DRY or PNT.</li>
+      <li>Finish: State the existing quality as the like-kind baseline (the client is owed like-kind). Describe it so a sub could bid it without seeing it: material, color, style, how it's built. No grade words on their own. Later selections are an upgrade or downgrade from this baseline — not open holds. (Ben, 2026-10-08)</li>
+      <li>Selection (optional): the client's choice, kept apart from the baseline. Write "Selection pending client" until they choose, then record the choice as an upgrade or downgrade from the Finish baseline in a new version. Status stays about the baseline, so a pending selection is not a hold.</li>
+      <li>Shower drain, faucet, piping and trim go under PLUMB. Waterproof membrane and tile shower system go under TILE.</li>
+      <li>MECH, PLUMB and ELEC: Material is the system or fixture class, not every SKU.</li>
+      <li>If remove and install quantities differ, use two rows.</li>
+      <li>(v1.5) New line only when the Action or the Material changes, not the room. Same material + same action in several rooms = one line: list the rooms and give one combined Qty.</li>
+      <li>(v1.5) Same material with different quantities (partial baseboard + all quarter round) = split into two lines. Same quantity everywhere = combine ("baseboard and quarter round").</li>
+      <li>(v1.5) General Conditions: the Material field is the <b>Item</b>: what it is (Supervision, Dumpster, Portable toilet, Permit, Floor protection), not what it takes. No hours or cost in the Item. Floor protection and anything else that covers several trades goes under GC.</li>
+    </ul>
+    <h3>Not in this form</h3>
+    <p class="hint">JobTread Budget, Xactimate, proposals, RFPs, pricing, sketches/callout drawings, PDFs.</p>
+  </details>
+
+  <div class="tipbar">🎤 <b>Tap the mic on your keyboard to speak.</b> Every text and number box takes dictation. Spoken numbers like "fourteen" become 14.</div>
+
+  <section class="card" id="sec-header">
+    <h2><span class="n">1</span>Job</h2>
+    <h3 class="grp">From lead intake</h3>
+    <div class="grid">
+      <label class="f"><span class="l req">Job name</span><input id="h-job" autocomplete="off" autocapitalize="words" data-mic><span class="hint">Client name + job number, assigned once we decide to actively pursue the job.</span><span class="msg" data-for="job"></span></label>
+      <label class="f"><span class="l req">Entity</span>
+        <select id="h-entity"><option value="">Choose entity</option><option>Delta Dry</option><option>DCS</option><option>McMurray</option><option>Delta Solutions</option></select>
+        <span class="msg" data-for="entity"></span></label>
+      <div class="f"><span class="l req">Job type</span>
+        <div class="seg" id="h-kind">
+          <label><input type="radio" name="kind" value="damage"> Damage</label>
+          <label><input type="radio" name="kind" value="non-damage"> Non-damage</label>
+        </div>
+        <span class="msg" data-for="kind"></span></div>
+    </div>
+    <div class="subgrp" id="cm-wrap">
+      <div class="subhead">Capture method: hand sketch or Matterport (vetter)<span class="hint">After the lead is vetted and the inspection is initiated. Any yes → Matterport; all no → Hand sketch. None of this blocks Check complete or export.</span></div>
+      <div class="grid">
+        <label class="f"><span class="l">Vetter (seat – person)</span><input id="cm-vetter" autocomplete="off" data-mic placeholder="Vetter – name"><span class="hint">The vetter seat owner isn't named yet.</span></label>
+      </div>
+      <div class="cmq">
+        <div class="f"><span class="l">1. Size or complexity beyond a simple room?</span>
+          <div class="seg" id="cm-c1"><label><input type="radio" name="cmc1" value="yes"> Yes</label><label><input type="radio" name="cmc1" value="no"> No</label></div>
+          <label class="f"><span class="l" style="font-weight:400;font-size:12px;color:var(--mut)">Threshold used (editable)</span><input id="cm-threshold" autocomplete="off" data-mic placeholder="[threshold to set: rooms / SF / levels]"></label></div>
+        <div class="f"><span class="l">2. Dimensions can't be captured reliably by hand?</span>
+          <div class="seg" id="cm-c2"><label><input type="radio" name="cmc2" value="yes"> Yes</label><label><input type="radio" name="cmc2" value="no"> No</label></div></div>
+        <div class="f"><span class="l">3. Spatial record needed beyond the site visit?</span>
+          <div class="seg" id="cm-c3"><label><input type="radio" name="cmc3" value="yes"> Yes</label><label><input type="radio" name="cmc3" value="no"> No</label></div>
+          <span class="hint">E.g. later reference, several trades or RFPs working from it, a record needed for other roles.</span></div>
+      </div>
+      <div class="cmres" id="cm-suggest"></div>
+      <div class="grid">
+        <label class="f"><span class="l">Method used</span><select id="cm-override"><option value="">Use the suggestion</option><option>Hand sketch</option><option>Matterport</option></select><span class="hint">The vetter can override the suggestion with a reason.</span></label>
+        <label class="f" id="cm-reason-wrap" style="display:none"><span class="l req">Override reason</span><input id="cm-reason" autocomplete="off" data-mic><span class="cmwarn" id="cm-reason-msg"></span></label>
+        <label class="f"><span class="l">Matterport operator</span><input id="cm-operator" autocomplete="off" data-mic placeholder="Seat – person"><span class="hint">Non-inspector staff (roster TBD). Its own task, not on the Inspector's clock.</span></label>
+        <label class="f"><span class="l">Matterport task scheduled</span><input id="cm-mpdate" type="date"></label>
+        <label class="f"><span class="l">Underlay ready</span><input id="cm-underlay" type="datetime-local"><span class="hint">The Matterport model or hand sketch the callouts get layered on.</span></label>
+        <label class="f"><span class="l">Scope start</span><input id="cm-scopestart" type="datetime-local"></label>
+      </div>
+      <div class="cmres" id="cm-24"></div>
+      <label class="f" id="cm-miss-wrap" style="display:none"><span class="l req">Miss reason</span><input id="cm-miss" autocomplete="off" data-mic placeholder="Why scope didn't start within 24 hours"><span class="cmwarn" id="cm-miss-msg"></span></label>
+      <div class="cmnote" id="cm-note">The Inspector's checklist of required sketches and measurements comes from the app (<b>to build</b>; not in this version). Jason's existing JobTread callout visual is the reference standard for the visual.</div>
+    </div>
+    <h3 class="grp" style="margin-top:16px">Inspector</h3>
+    <div class="grid">
+      <label class="f"><span class="l req">Inspector</span><input id="h-inspector" autocomplete="off" autocapitalize="words" data-mic><span class="hint">The Inspector seat: Jason today, or an outside inspector.</span><span class="msg" data-for="inspector"></span></label>
+      <div class="f"><span class="l">Inspection date</span>
+        <div class="pair"><label><small>Target (done by)</small><input id="h-idate-t" type="date"></label><label><small>Actual</small><input id="h-idate-a" type="date"></label></div></div>
+      <div class="f"><span class="l req">Scope date</span>
+        <div class="pair"><label><small>Target (done by)</small><input id="h-sdate-t" type="date"></label><label><small>Actual (required)</small><input id="h-sdate-a" type="date"></label></div>
+        <span class="msg" data-for="sdate"></span></div>
+      <div class="f"><span class="l" id="lbl-insp">Inspection report ref</span>
+        <div class="pair" style="grid-template-columns:1fr 90px"><input id="h-insp" autocomplete="off" data-mic aria-label="Inspection report ref" placeholder="JobName_InspectionReport_v1_YYYY-MM-DD"><input id="h-inspver" autocomplete="off" aria-label="Inspection report version" placeholder="v1"></div>
+        <span class="hint">Format: <b>&lt;JobName&gt;_InspectionReport_v&lt;#&gt;_&lt;YYYY-MM-DD&gt;</b>, e.g. <b>JobName_InspectionReport_v1_YYYY-MM-DD</b>. JobName with no spaces; the date is the inspection date. Keep the version box the same as the v# in the name. <button type="button" class="sm" id="insp-build">Build it from the job name</button></span><span class="cmwarn" id="insp-fmt"></span><span class="msg" data-for="insp"></span></div>
+      <div class="f" style="grid-column:1/-1"><span class="l" id="lbl-src">Damage source(s)</span>
+        <div id="h-sources"></div>
+        <div><button class="sm" type="button" id="add-src">+ Add source</button></div>
+        <span class="hint">As named on the inspection report. Mark each one Confirmed or Unverified.</span>
+        <span class="msg" data-for="sources"></span></div>
+      <label class="f"><span class="l">Sketch / visuals ref (optional)</span><input id="h-sketch" autocomplete="off" data-mic placeholder="Matterport link and/or JobTread file names"><span class="hint">Points to the visuals already saved in JobTread: paste the <b>Matterport link</b> and/or the <b>plan or underlay file names</b> as they're named in JobTread's Files. E.g. <i>Matterport: https://my.matterport.com/show/?m=… ; JobTread: JobName_FloorPlan.pdf, JobName_L2_Underlay_v1.pdf</i>. Not uploaded here. Whether visuals must come before the table is OPEN.</span></label>
+    </div>
+  </section>
+
+  <section class="card" id="sec-rows">
+    <h2><span class="n">2</span>Scope <span class="pill v" id="tv-pill">Table v1 (benchmark)</span></h2>
+    <div class="tabs"><button type="button" id="tab-walk" class="on">Scope walk</button><button type="button" id="tab-table">Table (<span id="row-count">0</span>)</button></div>
+    <div id="pane-walk"></div>
+    <div id="pane-table" style="display:none">
+      <div id="rows"></div>
+      <div class="empty" id="no-rows">No rows yet. Use Scope walk, or add rows here.</div>
+      <button type="button" id="add-row" class="pri">+ Add row</button>
+    </div>
+  </section>
+
+  <section class="card" id="sec-check">
+    <h2><span class="n">3</span>Check complete &amp; export</h2>
+    <label class="attest" id="attest-wrap"><input type="checkbox" id="attest">
+      <span><b>I confirm every callout on my sketch or plan set has a row in this table, and no callout is on two rows.</b><br><span class="hint">The form can't see your visuals. This is the visuals half of Level 2 complete.</span></span></label>
+    <div class="exp">
+      <button type="button" class="pri" id="btn-check">Check complete</button>
+      <button type="button" class="ok" id="btn-xlsx" disabled>Export .xlsx</button>
+      <button type="button" id="btn-csv" disabled>Export .csv</button>
+    </div>
+    <div id="result"></div>
+    <div class="landing" id="landing"></div>
+    <div class="flagwrap" id="flag-wrap">
+      <b>Field notes &amp; stuck flags</b> <span class="pill" id="flag-count">0</span>
+      <div class="hint">Every note and ⚑ Stuck flag left next to a field. They save with the project, go into the .xlsx export (sheet "Field notes &amp; flags"), and can be copied or downloaded any time, without Check complete.</div>
+      <div class="exp"><button type="button" id="btn-flags-copy">Copy list</button><button type="button" id="btn-flags-csv">Download notes &amp; flags (.csv)</button><label style="display:flex;gap:6px;align-items:center;font-size:14px"><input type="checkbox" id="flags-only" style="width:auto"> Stuck flags only</label></div>
+      <div class="landing" id="flag-msg"></div>
+      <div id="flag-list"></div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
+      <b>Versions</b> <span class="hint" id="ver-hint"></span>
+      <div class="exp"><button type="button" id="btn-rev" disabled>Start revision (v2)</button></div>
+      <div id="prior"></div>
+    </div>
+  </section>
+
+  <section class="card" id="sec-start">
+    <h2>Start over</h2>
+    <p class="hint">Start new opens a blank project; this one stays saved on this device (open it again from Project at the top). Remove clears only this project and its versions from this device. Export first if you need the file.</p>
+    <div class="exp"><button type="button" id="btn-new">Start new project</button><button type="button" id="btn-clear">Clear this form</button><button type="button" id="btn-del">Remove this project from this device</button></div>
+  </section>
+  <footer>Delta Level 2 Scoping · v1.6 (v1.5 + phone fixes; built on v1.3) · Rules: Level 2 Scoping Workbench (locked 2026-10-05) · Each project saves on this device; the exported .xlsx is the project file and the record</footer>
+</main>
+<div class="bar"><button type="button" id="bar-walk">Scope walk</button><button type="button" class="pri" id="bar-check">Check complete</button></div>
+<script>
+window.addEventListener("error",function(e){ var b=document.getElementById("nojs-banner"); if(b){ b.style.display=""; b.innerHTML="<b>The form hit an error and may not work here.</b>Open the file in Chrome or Safari. Details: "+String(e.message||"").replace(/[<&]/g,""); } });
+</script>
+<script>
+(function(){
+"use strict";
+var VERSION = "v1.6";
+// v1.6: phone fixes. "Not running" banner for email/file previews, storage-blocked banner, always-visible New / Clear, no job-like placeholders, bigger tap targets.
+// v1.5 (built on v1.3; v1.4 edits not included): free trade navigation, field notes + stuck flags, inspection/sketch ref guidance, GC "Item" guidance, inline rule examples.
+// Same storage keys and data model as v1.3 (adds state.fnotes and walk.skipped), so v1.3 projects on this device open here.
+// v1.3: one storage entry per project plus an index. Older keys (v1.0-v1.2, demo copy) are never read: clean start.
+// To move an older job in, open its exported .xlsx with "Open saved project".
+var K_INDEX = "delta-l2-v13-projects", K_CUR = "delta-l2-v13-current", K_P = "delta-l2-v13-p:";
+var DATA_SHEET = "Project file data", DATA_MARK = "DELTA-L2-PROJECT";
+// Official Trade / cost codes (Workbench > Codes (working), starting set locked 2026-10-05). Only list allowed.
+var CODES = [
+  ["GC","General Conditions / GC"],["FRAM","Framing"],["MECH","Mechanical / HVAC"],["PLUMB","Plumbing"],
+  ["ELEC","Electrical"],["INSUL","Insulation"],["DRY","Drywall"],["TRIM","Trim / millwork"],["TILE","Tile"],
+  ["FLR","Flooring (non-tile)"],["DOOR","Doors"],["PNT","Paint"],["DEMO","Demolition"],["ROOF","Roofing"],
+  ["EXT","Exterior / siding / openings"],["CAB","Cabinets"],["CLN","Cleaning / contents"],["MIT","Mitigation / dry-out"]
+];
+var CODE_NAME = {}; CODES.forEach(function(c){CODE_NAME[c[0]]=c[1];});
+var ACTIONS = ["remove only","install only","remove and replace","replace","detach & reset","n/a"];
+var ACTION_HINT = {
+  "remove only":"Tear-out, no reinstall.",
+  "install only":"Labor/install of new or provided material. No material bought on this row.",
+  "remove and replace":"Tear-out plus new install with materials.",
+  "replace":"New install with materials. No tear-out on this row. Paint = replace (decided).",
+  "detach & reset":"Take off, put the same piece back (the SAME item). Not new material.",
+  "n/a":"GC only: no remove/install story."
+};
+var STATUSES = ["known","assumed","hold"];
+// Grade words on their own only mean something inside estimating software. Non-blocking nudge (audit fix, Ben 2026-10-08).
+var GRADE_RE = /\b(custom|average|standard|builder|premium|high|economy|low|mid|good|better|best)[- ]grade\b/i;
+var GRADE_TIP = "Grade word (e.g. \"custom grade\"): describe it so a sub could bid it without seeing it: material, color, style, how it's built. No grade words on their own.";
+var STATUS_HINT = {known:"Solid enough to treat as fact.",assumed:"Filled so work can continue. Note says what was assumed.",hold:"Can't honestly fill it yet. Stays unpriced; flagged."};
+// Workbench defines no Unit list; units used in Delta's plan-set files, + SY (carpet) and HR (Ben 2026-10-08).
+var UNITS = ["SF","LF","SY","EA","LS","Set","HR"];
+var FIELDS = ["callout","trade","action","material","location","qty","unit","finish","status","note","selection"];
+var STEPS = ["callout","action","material","location","qty","unit","finish","status","note"];
+
+function blankCM(){ return {vetter:"",c1:"",c2:"",c3:"",threshold:"",override:"",overrideReason:"",operator:"",mpDate:"",underlay:"",scopeStart:"",missReason:""}; }
+function newPid(){ return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function blankState(){
+  return {v:3, pid:newPid(), createdAt:new Date().toISOString(), header:{job:"",entity:"",kind:"",inspector:"",idateT:"",idateA:"",sdateT:"",sdateA:todayISO(),insp:"",inspVer:"v1",sources:[{text:"",conf:""}],sketch:"",walkNotes:"",cm:blankCM()},
+          rows:[], attest:false, passedHash:null, passedAt:null, checked:false, savedAt:null, seq:0,
+          version:1, prior:[], tab:"walk", walk:{phase:"pick",trades:[],ti:0,rowId:null,step:"callout",skipped:[]}, fnotes:{}};
+}
+function migrate(s){
+  if(!s) return null;
+  if(s.v===2||s.v===3){ // v1.1/v1.2 project -> v1.3: Selection field (empty) on every row, capture-method block on the header
+    if(!s.header) return null;
+    var all=(s.rows||[]).slice(); (s.prior||[]).forEach(function(p){ all=all.concat(p.rows||[]); });
+    all.forEach(function(r){ if(r.selection==null) r.selection=""; });
+    var cm=blankCM(), old=s.header.cm||{}; Object.keys(cm).forEach(function(k){ if(old[k]!=null) cm[k]=old[k]; }); s.header.cm=cm;
+    s.v=3; if(!s.pid) s.pid=newPid(); if(!s.prior) s.prior=[]; if(!s.rows) s.rows=[]; if(!s.version) s.version=1;
+    if(!s.fnotes || typeof s.fnotes!=="object") s.fnotes={};
+    return s;
+  }
+  if(s.v===1){ // v1.0 saved job -> v1.1
+    var b=blankState(), h=s.header||{};
+    b.header.job=h.job||""; b.header.entity=h.entity||""; b.header.kind=h.kind||""; b.header.inspector=h.scoper||"";
+    b.header.sdateA=h.date||todayISO(); b.header.insp=h.insp||""; b.header.sketch=h.sketch||"";
+    b.header.sources=(h.sources||[]).map(function(x){return {text:x||"",conf:""};}); if(!b.header.sources.length) b.header.sources=[{text:"",conf:""}];
+    b.rows=(s.rows||[]); b.seq=s.seq||0; b.attest=!!s.attest; b.tab="table";
+    return b;
+  }
+  return null;
+}
+function todayISO(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function pad(n){return (n<10?"0":"")+n;}
+function newRow(trade){state.seq=(state.seq||0)+1;return {id:"r"+Date.now().toString(36)+state.seq,callout:"",trade:trade||"",action:"",material:"",location:"",qty:"",unit:"",finish:"",status:"",note:"",selection:"",touched:false};}
+
+var STORAGE_OK=(function(){ try{ var k="delta-l2-probe"; localStorage.setItem(k,"1"); var ok=localStorage.getItem(k)==="1"; localStorage.removeItem(k); return ok; }catch(e){ return false; } })();
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function readIndex(){ try{ var a=JSON.parse(lsGet(K_INDEX)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function writeIndex(a){ lsSet(K_INDEX, JSON.stringify(a)); }
+function byRecent(a,b){ return String(b.savedAt||"").localeCompare(String(a.savedAt||"")); }
+function loadProject(pid){ try{ var s=migrate(JSON.parse(lsGet(K_P+pid)||"null")); if(s) s.pid=pid; return s; }catch(e){ return null; } }
+var state=null;
+(function(){
+  var cur=lsGet(K_CUR); if(cur) state=loadProject(cur);
+  if(!state){ var idx=readIndex().sort(byRecent); for(var i=0;i<idx.length && !state;i++) state=loadProject(idx[i].pid); }
+  if(!state) state=blankState();
+})();
+if(!state.walk) state.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"};
+if(!state.fnotes) state.fnotes={};
+
+var $ = function(id){return document.getElementById(id);};
+var saveTimer=null;
+function save(){
+  state.savedAt = new Date().toISOString();
+  var ok = lsSet(K_P+state.pid, JSON.stringify(state));
+  if(ok){
+    var idx=readIndex().filter(function(x){return x.pid!==state.pid;});
+    idx.push({pid:state.pid, job:t(state.header.job), version:state.version, savedAt:state.savedAt}); writeIndex(idx); lsSet(K_CUR, state.pid);
+  }
+  $("saved").textContent = ok ? "Saved on this device " + fmtTime(new Date(state.savedAt)) : "Not saving here (export before closing)";
+  renderPicker();
+}
+function flushSave(){ clearTimeout(saveTimer); save(); }
+function fmtTime(d){return d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});}
+function fmtStamp(d){
+  var tz=""; try{ tz = new Intl.DateTimeFormat([], {timeZoneName:"short"}).formatToParts(d).filter(function(p){return p.type==="timeZoneName";})[0].value; }catch(e){}
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes())+(tz?" "+tz:"");
+}
+function changed(){ invalidate(); clearTimeout(saveTimer); saveTimer=setTimeout(save,250); }
+var lastResultHash=null;
+function invalidate(){
+  var h=contentHash();
+  if(state.passedHash && state.passedHash!==h){ state.passedHash=null; state.passedAt=null; }
+  if(lastResultHash && lastResultHash!==h){ lastResultHash=null; renderResult(null); }
+  updateExportButtons();
+}
+function contentHash(){
+  var h=state.header;
+  return JSON.stringify({h:[h.job,h.entity,h.kind,h.inspector,h.idateT,h.idateA,h.sdateT,h.sdateA,h.insp,h.inspVer,h.sources,h.sketch,h.walkNotes,h.cm||blankCM()],a:state.attest,v:state.version,
+    r:state.rows.map(function(r){return FIELDS.map(function(f){return r[f];});})});
+}
+function t(s){return (s==null?"":String(s)).trim();}
+
+// ---------- spoken numbers ----------
+var ONES={zero:0,oh:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
+var TENS={twenty:20,thirty:30,forty:40,fourty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+var FILLER={about:1,around:1,approximately:1,roughly:1,maybe:1,like:1};
+function spokenUnit(s){
+  s=" "+s.toLowerCase()+" ";
+  if(/square (feet|foot)|sq\.? ?ft|\ssf\s/.test(s)) return "SF";
+  if(/square yards?|\ssy\s/.test(s)) return "SY";
+  if(/linear (feet|foot)|lineal (feet|foot)|\slf\s/.test(s)) return "LF";
+  if(/\seach\s|\sea\s/.test(s)) return "EA";
+  if(/\shours?\s|\shrs?\s/.test(s)) return "HR";
+  if(/lump sum|\sls\s/.test(s)) return "LS";
+  return "";
+}
+function spokenQty(str){
+  var s=t(str).toLowerCase().replace(/(\d),(\d)/g,"$1$2");
+  if(!s) return null;
+  var unit=spokenUnit(s);
+  var m=s.match(/^(\d+(\.\d+)?)/);
+  if(m) return {num:parseFloat(m[1]),unit:unit};
+  var toks=s.replace(/([a-z])-([a-z])/g,"$1 $2").split(/\s+/), total=0, cur=0, started=false, dec="", inDec=false;
+  for(var i=0;i<toks.length;i++){
+    var w=toks[i];
+    if(!started && FILLER[w]) continue;
+    if(inDec){ if(ONES[w]!=null && ONES[w]<10){dec+=String(ONES[w]);continue;} break; }
+    if(ONES[w]!=null){cur+=ONES[w];started=true;continue;}
+    if(TENS[w]!=null){cur+=TENS[w];started=true;continue;}
+    if(w==="a" && (toks[i+1]==="hundred"||toks[i+1]==="thousand")){cur+=1;started=true;continue;}
+    if(w==="hundred" && started){cur=(cur||1)*100;continue;}
+    if(w==="thousand" && started){total+=(cur||1)*1000;cur=0;continue;}
+    if(w==="and" && started){ if(toks[i+1]==="a" && toks[i+2]==="half"){cur+=0.5;i+=2;} continue; }
+    if(w==="point" && started){inDec=true;continue;}
+    if(w==="half" && !started){cur=0.5;started=true;continue;}
+    if(started) break;
+    return null;
+  }
+  if(!started) return null;
+  var n=total+cur; if(dec) n=parseFloat(String(Math.floor(n))+"."+dec);
+  return {num:n,unit:unit};
+}
+function normalizeQty(r){
+  var q=t(r.qty); if(!q || isNum(q) || looksRange(q)) return false;
+  var p=spokenQty(q); if(!p) return false;
+  r.qty=String(p.num); if(p.unit && !r.unit) r.unit=p.unit; return true;
+}
+
+// ---------- validation ----------
+function parseIds(s){ return t(s).split(/[,;\s]+/).filter(Boolean); }
+function isNum(s){ return /^\d+(\.\d+)?$/.test(t(s).replace(/,/g,"")); }
+function looksRange(s){ return /\d\s*(-|–|to)\s*\d/i.test(t(s)); }
+function validateHeader(){
+  var h=state.header, e={};
+  if(!t(h.job)) e.job="Job name is required (from lead intake).";
+  if(!t(h.entity)) e.entity="Pick the entity.";
+  if(h.kind!=="damage" && h.kind!=="non-damage") e.kind="Pick Damage or Non-damage.";
+  if(!t(h.inspector)) e.inspector="Who inspected / scoped it?";
+  if(!t(h.sdateA)) e.sdate="The actual Scope date is required.";
+  if(h.kind==="damage"){
+    if(!t(h.insp)) e.insp="Damage job: the inspection report ref is required. It's what starts scoping.";
+    else if(!t(h.inspVer)) e.insp="Give the inspection report version (v1, v2…).";
+    var src=(h.sources||[]), named=src.filter(function(s){return t(s.text);});
+    if(!named.length) e.sources="Damage job: name at least one source of damage from the inspection report.";
+    else if(src.some(function(s){return t(s.text) && !s.conf;})) e.sources="Mark each damage source Confirmed or Unverified.";
+    else if(src.some(function(s){return !t(s.text) && s.conf;})) e.sources="A source is marked but not described. Describe it or remove it.";
+  }
+  return e;
+}
+function validateRow(r, dupMap){
+  var e={}, w=[];
+  var st=r.status, hold = st==="hold";
+  var ids=parseIds(r.callout);
+  if(!ids.length) e.callout="Callout ID required. It must match your sketch / plan set.";
+  else {
+    var seen={}, dupIn=[], dupOut=[];
+    ids.forEach(function(id){var k=id.toUpperCase(); if(seen[k]) dupIn.push(id); seen[k]=1; if(dupMap && dupMap[k]>1) dupOut.push(id);});
+    if(dupIn.length) e.callout="Callout "+dupIn.join(", ")+" is listed twice on this row.";
+    else if(dupOut.length) e.callout="Callout "+uniq(dupOut).join(", ")+" is on another row too. Each callout matches exactly one row.";
+  }
+  if(!r.trade) e.trade="Pick a Trade from the official list.";
+  else if(!CODE_NAME[r.trade]) e.trade="Not on the official code list.";
+  if(!r.action) e.action="Pick an Action.";
+  else if(ACTIONS.indexOf(r.action)<0) e.action="Not an allowed Action.";
+  else if(r.action==="n/a" && r.trade && r.trade!=="GC") e.action="n/a is only for GC (General Conditions). Pick the real action.";
+  if(!t(r.location)) e.location="Location required.";
+  if(!st) e.status="Pick a Status. Blank is not done.";
+  else if(STATUSES.indexOf(st)<0) e.status="Status must be known, assumed or hold.";
+  if(!hold){
+    if(!t(r.material)) e.material="Material required"+(st?" (or set Status to hold).":".");
+    if(!t(r.qty)) e.qty="Qty required. A wrong qty is fine"+(st?"; or set hold.":".");
+    else if(looksRange(r.qty)) e.qty="Ranges are only allowed on a hold. Pick one number (it can change in the next version) or set hold.";
+    else if(!isNum(r.qty)) e.qty="Qty must be a number.";
+    else if(parseFloat(t(r.qty).replace(/,/g,""))<=0) e.qty="Qty must be more than 0.";
+    if(!r.unit) e.unit="Unit required.";
+    if(!t(r.finish)) e.finish="Finish required. Use \"None\" if there's no finish.";
+  } else {
+    if(t(r.qty) && isNum(r.qty) && !r.unit) e.unit="You gave a Qty, so give its Unit.";
+    if(!t(r.note)) w.push("Hold with no note: say what's holding it and what releases it.");
+  }
+  if(st==="assumed" && !t(r.note)) e.note="Assumed: the note must say what was assumed.";
+  var txt=(t(r.material)+" "+t(r.location)+" "+t(r.note)).toLowerCase();
+  if(/floor protection/.test(txt) && r.trade && r.trade!=="GC") w.push("Locked rule: floor protection goes under GC.");
+  if(/(waterproof|membrane)/.test(txt) && r.trade && r.trade!=="TILE") w.push("Locked rule: waterproof membrane / tile shower system goes under TILE.");
+  if(/\b(drain|faucet|supply line|shut.?off|angle stop|p-?trap)\b/.test(txt) && r.trade && ["PLUMB","MIT","DEMO","CLN","GC"].indexOf(r.trade)<0) w.push("Locked rule: drain, faucet, piping and trim go under PLUMB.");
+  if(/\b(primer|prime|texture|tape|mask)\b/.test(t(r.material).toLowerCase()) && r.trade && r.trade!=="DRY" && r.trade!=="PNT") w.push("Tape, texture and primer stay inside DRY or PNT.");
+  if(/(\s(and|&|\+|plus)\s|;|\/ )/i.test(t(r.material)) && !hold) w.push("Two materials? A new row starts when the Material changes (\"carpet and pad\" = two rows).");
+  if((r.trade==="DEMO"||r.trade==="MIT") && r.action && r.action!=="remove only" && r.action!=="n/a") w.push(r.trade+" is usually remove only. Check the Action.");
+  if(r.trade==="PNT" && r.action && r.action!=="replace") w.push("Paint = replace (a new coat with materials). Decided by Ben 2026-10-08.");
+  if(GRADE_RE.test(t(r.material)+" "+t(r.finish))) w.push(GRADE_TIP);
+  if(r.trade==="GC" && /(\$|\bcost\b|\bprice\b|\b\d+\s*(hours?|hrs?|days?|weeks?)\b|\bman.?hours?\b)/i.test(t(r.material))) w.push("GC Item says what it is (e.g. Supervision, Dumpster 20 yd), not what it takes. No hours or cost in the Item.");
+  return {e:e,w:w};
+}
+function uniq(a){var s={},o=[];a.forEach(function(x){var k=x.toUpperCase();if(!s[k]){s[k]=1;o.push(x);}});return o;}
+function calloutCounts(){
+  var m={}; state.rows.forEach(function(r){ uniq(parseIds(r.callout)).forEach(function(id){var k=id.toUpperCase(); m[k]=(m[k]||0)+1;}); }); return m;
+}
+function dupRowWarnings(){
+  var m={}, out={};
+  state.rows.forEach(function(r,i){
+    if(!r.trade||!r.action||!t(r.material)||!t(r.location)) return;
+    var k=[r.trade,r.action,t(r.material).toLowerCase(),t(r.location).toLowerCase()].join("|");
+    (m[k]=m[k]||[]).push(i);
+  });
+  Object.keys(m).forEach(function(k){ if(m[k].length>1) m[k].forEach(function(i){ out[i]="Same Trade, Action, Material and Location as row "+m[k].filter(function(j){return j!==i;}).map(function(j){return j+1;}).join(", ")+". Merge them or make the difference clear."; }); });
+  return out;
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function opts(list, sel, placeholder, labeler){
+  var h='<option value="">'+esc(placeholder)+'</option>';
+  list.forEach(function(v){ h+='<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(labeler?labeler(v):v)+'</option>'; });
+  return h;
+}
+// ---------- header ----------
+var HMAP={"h-job":"job","h-entity":"entity","h-inspector":"inspector","h-idate-t":"idateT","h-idate-a":"idateA","h-sdate-t":"sdateT","h-sdate-a":"sdateA","h-insp":"insp","h-inspver":"inspVer","h-sketch":"sketch"};
+function checkInspFmt(){
+  var el=$("insp-fmt"); if(!el) return; var v=t(state.header.insp);
+  if(!v){ el.textContent=""; return; }
+  var m=/^([A-Za-z0-9]+)_InspectionReport_v(\d+)_(\d{4}-\d{2}-\d{2})$/.exec(v);
+  if(!m) el.textContent="Heads up: expected JobName_InspectionReport_v#_YYYY-MM-DD (e.g. JobName_InspectionReport_v1_YYYY-MM-DD). You can still continue.";
+  else if(t(state.header.inspVer) && t(state.header.inspVer).replace(/^v/i,"")!==m[2]) el.textContent="Heads up: the name says v"+m[2]+" but the version box says "+t(state.header.inspVer)+".";
+  else el.textContent="";
+}
+function buildInspName(){
+  var h=state.header, j=t(h.job).replace(/[^A-Za-z0-9]+/g,"")||"JobName", vn=(t(h.inspVer).replace(/[^0-9]/g,"")||"1"), d=h.idateA||h.idateT||todayISO();
+  h.insp=j+"_InspectionReport_v"+vn+"_"+d; if(!t(h.inspVer)) h.inspVer="v"+vn; $("h-insp").value=h.insp; $("h-inspver").value=h.inspVer; changed(); checkInspFmt(); if(state.checked||state.headerTouched) refreshValidation();
+}
+function renderHeader(){
+  var h=state.header;
+  Object.keys(HMAP).forEach(function(id){ $(id).value=h[HMAP[id]]||""; });
+  document.querySelectorAll('input[name=kind]').forEach(function(x){x.checked=(x.value===h.kind);});
+  renderSources(); applyKind();
+  $("attest").checked=!!state.attest;
+  renderCapture(false);
+  renderHeaderNotes(); checkInspFmt();
+}
+// ---------- capture method (vetter) ----------
+var CMMAP={"cm-vetter":"vetter","cm-threshold":"threshold","cm-override":"override","cm-reason":"overrideReason","cm-operator":"operator","cm-mpdate":"mpDate","cm-underlay":"underlay","cm-scopestart":"scopeStart","cm-miss":"missReason"};
+function cmSuggest(cm){ var a=[cm.c1,cm.c2,cm.c3]; if(a.indexOf("yes")>=0) return "Matterport"; if(a[0]==="no"&&a[1]==="no"&&a[2]==="no") return "Hand sketch"; return ""; }
+function cmIsOverride(cm){ return !!cm.override && cm.override!==cmSuggest(cm); }
+function cmMethod(cm){ return cm.override || cmSuggest(cm); }
+function fmtLocal(v){ return v ? String(v).replace("T"," ") : ""; }
+function cm24(cm){
+  if(cm.underlay && cm.scopeStart){
+    var u=new Date(cm.underlay), s=new Date(cm.scopeStart), hrs=(s-u)/36e5;
+    if(isNaN(hrs)) return {state:"none",label:"Not recorded"};
+    if(hrs<0) return {state:"bad",label:"Check the times: scope start is before underlay ready",hours:hrs};
+    return hrs<=24 ? {state:"met",label:"Met ("+hrs.toFixed(1)+" h)",hours:hrs} : {state:"missed",label:"Missed ("+hrs.toFixed(1)+" h)",hours:hrs};
+  }
+  if(cm.underlay){ var by=new Date(new Date(cm.underlay).getTime()+864e5); return {state:"open",label:isNaN(by)?"Open":"Open: scope should start by "+by.getFullYear()+"-"+pad(by.getMonth()+1)+"-"+pad(by.getDate())+" "+pad(by.getHours())+":"+pad(by.getMinutes())}; }
+  return {state:"none",label:"Not recorded"};
+}
+function renderCapture(keepInputs){
+  var cm=state.header.cm;
+  if(!keepInputs){
+    Object.keys(CMMAP).forEach(function(id){ $(id).value=cm[CMMAP[id]]||""; });
+    ["c1","c2","c3"].forEach(function(k){ document.querySelectorAll('input[name=cm'+k+']').forEach(function(x){ x.checked=(x.value===cm[k]); }); });
+  }
+  var sug=cmSuggest(cm), used=cmMethod(cm), ov=cmIsOverride(cm);
+  $("cm-suggest").className="cmres"+(sug?" sug":"");
+  $("cm-suggest").innerHTML='Suggested: <b id="cm-sug">'+esc(sug||"answer the three checks")+'</b>'+(sug==="Matterport"?' (a check says yes)':sug?' (all three checks are no)':' (any yes → Matterport; all no → Hand sketch)')+
+    ' · Method used: <b id="cm-used">'+esc(used||"not chosen yet")+'</b>'+(ov?' (vetter override)':'');
+  $("cm-reason-wrap").style.display = ov ? "" : "none";
+  $("cm-reason-msg").textContent = ov && !t(cm.overrideReason) ? "Say why "+cm.override+" was chosen over the suggestion." : "";
+  var r=cm24(cm), box=$("cm-24");
+  box.className="cmres "+r.state;
+  box.innerHTML='24-hour target (scope starts within 24 hours of underlay ready): <b id="cm-24state">'+esc(r.label)+'</b>'+(r.state==="missed"?'. A target, not a gate: log why below. Check complete and export are never blocked.':'');
+  $("cm-miss-wrap").style.display = r.state==="missed" ? "" : "none";
+  $("cm-miss-msg").textContent = r.state==="missed" && !t(cm.missReason) ? "Target missed: say why. This doesn't block Check complete or export." : "";
+}
+function applyKind(){
+  var dmg = state.header.kind==="damage";
+  $("lbl-insp").className="l"+(dmg?" req":""); $("lbl-src").className="l"+(dmg?" req":"");
+  $("lbl-insp").firstChild.nodeValue = dmg ? "Inspection report ref" : "Inspection report ref (optional)";
+  $("lbl-src").firstChild.nodeValue = dmg ? "Damage source(s)" : "Damage source(s) (optional)";
+}
+function renderSources(){
+  var box=$("h-sources"), h=state.header; if(!h.sources||!h.sources.length) h.sources=[{text:"",conf:""}];
+  box.innerHTML = h.sources.map(function(s,i){
+    return '<div class="src-row"><input data-src="'+i+'" value="'+esc(s.text)+'" placeholder="Source '+(i+1)+'" autocomplete="off" aria-label="Damage source '+(i+1)+'">'+
+      '<select data-srcconf="'+i+'" aria-label="Source '+(i+1)+' confirmed or unverified">'+opts(["Confirmed","Unverified"], s.conf, "Confirmed?")+'</select>'+
+      (h.sources.length>1?'<button type="button" class="sm" data-delsrc="'+i+'" aria-label="Remove source">✕</button>':'<span></span>')+'</div>';
+  }).join("");
+}
+function bindHeader(){
+  Object.keys(HMAP).forEach(function(id){
+    var el=$(id), ev = el.tagName==="SELECT"||el.type==="date" ? "change":"input";
+    el.addEventListener(ev,function(){ state.header[HMAP[id]]=this.value; changed(); if(state.checked) refreshValidation(); checkInspFmt(); });
+    el.addEventListener("blur",function(){ if(!state.headerTouched){ state.headerTouched=true; setTimeout(refreshValidation, 300); } });
+  });
+  document.querySelectorAll('input[name=kind]').forEach(function(x){ x.addEventListener("change",function(){ state.header.kind=this.value; state.headerTouched=true; applyKind(); changed(); refreshValidation(); }); });
+  $("h-sources").addEventListener("input",function(e){ var i=e.target.getAttribute("data-src"); if(i!=null){ state.header.sources[+i].text=e.target.value; changed(); } });
+  $("h-sources").addEventListener("change",function(e){ var i=e.target.getAttribute("data-srcconf"); if(i!=null){ state.header.sources[+i].conf=e.target.value; changed(); refreshValidation(); } });
+  $("h-sources").addEventListener("click",function(e){ var i=e.target.getAttribute("data-delsrc"); if(i!=null){ state.header.sources.splice(+i,1); renderSources(); attachMics($("h-sources")); changed(); refreshValidation(); } });
+  $("add-src").addEventListener("click",function(){ state.header.sources.push({text:"",conf:""}); renderSources(); attachMics($("h-sources")); var ins=document.querySelectorAll('[data-src]'); ins[ins.length-1].focus(); changed(); });
+  $("attest").addEventListener("change",function(){ state.attest=this.checked; changed(); refreshValidation(); });
+  Object.keys(CMMAP).forEach(function(id){
+    var el=$(id), ev = el.tagName==="SELECT"||el.type==="date"||el.type==="datetime-local" ? "change":"input";
+    el.addEventListener(ev,function(){ state.header.cm[CMMAP[id]]=this.value; changed(); renderCapture(true); });
+  });
+  document.querySelectorAll('input[name^=cmc]').forEach(function(x){ x.addEventListener("change",function(){ state.header.cm["c"+this.name.slice(3)]=this.value; changed(); renderCapture(true); }); });
+}
+
+// ---------- table view ----------
+var _fnRow=null;
+function rowHTML(r,i){
+  _fnRow=r.id;
+  var unitOpts = UNITS.slice(); if(r.unit && unitOpts.indexOf(r.unit)<0) unitOpts.push(r.unit);
+  return '<div class="row" id="'+r.id+'" data-i="'+i+'">'+
+   '<div class="rowhead"><span class="t">Row '+(i+1)+'</span><span class="pill" data-k="sum"></span><span class="pill" data-k="state"></span>'+
+   '<span class="sp"><button type="button" class="sm" data-act="dup" title="Copy this row to start a new one (change the Action or Material)">Copy row</button><button type="button" class="sm" data-act="del">Delete</button></span></div>'+
+   '<div class="rgrid">'+
+    fld("c2","callout","Callout ID(s)",'<input data-f="callout" value="'+esc(r.callout)+'" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" data-mic>', true)+
+    fld("c3","trade","Trade (Cost Group)",'<select data-f="trade">'+opts(CODES.map(function(c){return c[0];}), r.trade, "Choose trade", function(c){return c+" — "+CODE_NAME[c];})+'</select>', true)+
+    fld("c3 wide-m","action","Action",'<select data-f="action">'+opts(ACTIONS, r.action, "Choose action")+'</select><span class="hint" data-k="ahint"></span><span class="rh" data-rh="action"></span>', true)+
+    fld("c4 wide-m","location","Location",'<input data-f="location" value="'+esc(r.location)+'" autocomplete="off" data-mic><span class="rh" data-rh="location"></span>', true)+
+    fld("c4 wide-m","material","Material",'<input data-f="material" value="'+esc(r.material)+'" autocomplete="off" data-mic><span class="rh" data-rh="material"></span>', true, "soft")+
+    fld("c2","qty","Qty",'<input data-f="qty" value="'+esc(r.qty)+'" autocomplete="off" inputmode="text" enterkeyhint="next" data-mic data-num><span class="rh" data-rh="qty"></span>', true, "soft")+
+    fld("c2","unit","Unit",'<select data-f="unit">'+opts(unitOpts, r.unit, "Unit")+'</select>', true, "soft")+
+    fld("c4 wide-m","finish","Finish",'<input data-f="finish" value="'+esc(r.finish)+'" autocomplete="off" data-mic><span class="rh" data-rh="finish"></span>', true, "soft")+
+    fld("c3","status","Status",'<select data-f="status">'+opts(STATUSES, r.status, "Choose status")+'</select>', true)+
+    fld("c4 wide-m","selection","Selection (optional)",'<input data-f="selection" value="'+esc(r.selection)+'" autocomplete="off" placeholder="e.g. Selection pending client" data-mic>', false)+
+    fld("c5","note","Note",'<input data-f="note" value="'+esc(r.note)+'" autocomplete="off" data-mic>', false)+
+   '</div><div class="warns" data-k="warns"></div></div>';
+}
+function fld(cls,key,label,control,req,soft){
+  return '<label class="f '+cls+'" data-fld="'+key+'"><span class="l'+(req?' req':'')+'"'+(soft?' data-soft="1"':'')+'>'+label+'</span>'+control+'<span class="msg" data-m="'+key+'"></span>'+(_fnRow?noteUI("r:"+_fnRow+":"+key):'')+'</label>';
+}
+function renderRows(){
+  $("rows").innerHTML = state.rows.map(rowHTML).join("");
+  $("no-rows").style.display = state.rows.length?"none":"block";
+  attachMics($("rows"));
+  refreshValidation();
+}
+function refreshValidation(){
+  var counts=calloutCounts(), dups=dupRowWarnings();
+  state.rows.forEach(function(r,i){
+    var el=$(r.id); if(!el) return;
+    var v=validateRow(r,counts), show = r.touched || state.checked;
+    if(dups[i]) v.w.push(dups[i]);
+    var hold=r.status==="hold";
+    el.className="row"+(r.status?" st-"+r.status:"")+(show && Object.keys(v.e).length?" has-err":"");
+    el.querySelectorAll("[data-f]").forEach(function(inp){
+      var k=inp.getAttribute("data-f"), bad = show && v.e[k];
+      inp.classList.toggle("bad", !!bad);
+      var m=el.querySelector('[data-m="'+k+'"]'); if(m) m.textContent = bad? v.e[k] : "";
+    });
+    el.querySelectorAll('[data-soft]').forEach(function(s){ s.classList.toggle("req", !hold); });
+    el.querySelector('[data-k="sum"]').textContent = [r.trade, r.action].filter(Boolean).join(" · ") || "new";
+    var stp=el.querySelector('[data-k="state"]'), ne=Object.keys(v.e).length;
+    if(ne){ stp.className="pill e"; stp.textContent = ne+(ne===1?" issue":" issues"); }
+    else if(hold){ stp.className="pill h"; stp.textContent="hold (flagged)"; }
+    else { stp.className="pill g"; stp.textContent="ok"; }
+    el.querySelector('[data-k="warns"]').innerHTML = v.w.map(function(x){return "<div>"+esc(x)+"</div>";}).join("");
+    var ah=el.querySelector('[data-k="ahint"]'); if(ah) ah.textContent=ACTION_HINT[r.action]||"";
+    var ml=el.querySelector('[data-fld="material"] .l'); if(ml && ml.firstChild) ml.firstChild.nodeValue = r.trade==="GC" ? "Item (GC)" : "Material";
+    el.querySelectorAll('[data-rh]').forEach(function(x){ x.textContent=ruleHint(r.trade, x.getAttribute("data-rh")); });
+  });
+  renderFlags();
+  var he=validateHeader(), showH = state.checked || state.headerTouched;
+  document.querySelectorAll('#sec-header .msg[data-for]').forEach(function(m){
+    var k=m.getAttribute("data-for"); m.textContent = showH && he[k] ? he[k] : "";
+  });
+  var map={job:"h-job",entity:"h-entity",inspector:"h-inspector",sdate:"h-sdate-a",insp:"h-insp"};
+  Object.keys(map).forEach(function(k){ $(map[k]).classList.toggle("bad", !!(showH && he[k])); });
+  $("h-kind").classList.toggle("bad", !!(showH && he.kind));
+  document.querySelectorAll('[data-src]').forEach(function(x){ var i=+x.getAttribute("data-src"), s=state.header.sources[i]||{}; x.classList.toggle("bad", !!(showH && he.sources) && !t(s.text)); });
+  document.querySelectorAll('[data-srcconf]').forEach(function(x){ var i=+x.getAttribute("data-srcconf"), s=state.header.sources[i]||{}; x.classList.toggle("bad", !!(showH && he.sources) && t(s.text) && !s.conf); });
+  $("attest-wrap").classList.toggle("bad", state.checked && !state.attest);
+  $("row-count").textContent = state.rows.length;
+}
+function bindRows(){
+  var box=$("rows");
+  function upd(e){
+    var f=e.target.getAttribute("data-f"); if(!f) return;
+    var el=e.target.closest(".row"), r=state.rows[+el.getAttribute("data-i")]; if(!r) return;
+    r[f]=e.target.value;
+    if(f==="qty" && e.type==="change" && normalizeQty(r)){ e.target.value=r.qty; var us=el.querySelector('[data-f="unit"]'); if(us) us.value=r.unit; }
+    if(e.type==="change" || f==="trade"||f==="action"||f==="status"||f==="unit") r.touched=true;
+    changed(); refreshValidation();
+  }
+  box.addEventListener("input",upd); box.addEventListener("change",upd);
+  box.addEventListener("focusout",function(e){ var el=e.target.closest&&e.target.closest(".row"); if(!el) return; var r=state.rows[+el.getAttribute("data-i")]; if(r && !r.touched){ r.touched=true; setTimeout(function(){ refreshValidation(); save(); }, 300); } });
+  box.addEventListener("click",function(e){
+    var act=e.target.getAttribute("data-act"); if(!act) return;
+    var el=e.target.closest(".row"), i=+el.getAttribute("data-i");
+    if(act==="del"){ if(!confirm("Delete row "+(i+1)+"?")) return; fnPrune(state.rows[i].id); state.rows.splice(i,1); renderRows(); changed(); }
+    if(act==="dup"){ var src=state.rows[i], c=newRow(); FIELDS.forEach(function(k){c[k]=src[k];}); c.callout=""; state.rows.splice(i+1,0,c); renderRows(); changed(); var ne=$(c.id); ne.scrollIntoView({behavior:"smooth",block:"center"}); ne.querySelector('[data-f="callout"]').focus(); }
+  });
+}
+function addRow(){ var r=newRow(); state.rows.push(r); renderRows(); changed(); var el=$(r.id); el.scrollIntoView({behavior:"smooth",block:"center"}); el.querySelector('[data-f="callout"]').focus({preventScroll:true}); }
+function setTab(tab){
+  state.tab=tab; $("tab-walk").classList.toggle("on",tab==="walk"); $("tab-table").classList.toggle("on",tab==="table");
+  $("pane-walk").style.display = tab==="walk"?"block":"none"; $("pane-table").style.display = tab==="table"?"block":"none";
+  if(tab==="walk") renderWalk(); else renderRows();
+  save();
+}
+
+// ---------- scope walk ----------
+var W = function(){ var w=state.walk; if(!w.skipped) w.skipped=[]; return w; };
+function walkRow(){ var w=W(); for(var i=0;i<state.rows.length;i++) if(state.rows[i].id===w.rowId) return state.rows[i]; return null; }
+function stepApplies(r, s){
+  if(s==="unit") return !!t(r.qty);
+  if(s==="note") return r.status==="assumed"||r.status==="hold";
+  return true;
+}
+function nextStepOf(r, s){ for(var i=STEPS.indexOf(s)+1;i<STEPS.length;i++) if(stepApplies(r,STEPS[i])) return STEPS[i]; return null; }
+function prevStepOf(r, s){ for(var i=STEPS.indexOf(s)-1;i>=0;i--) if(stepApplies(r,STEPS[i])) return STEPS[i]; return null; }
+function softMissing(r){ return ["material","qty","unit","finish"].filter(function(f){ return f==="unit" ? (t(r.qty) && !r.unit) || (!t(r.qty)) : !t(r[f]); }); }
+function suggestCallout(){
+  var last=null; for(var i=state.rows.length-1;i>=0;i--){ var ids=parseIds(state.rows[i].callout); if(ids.length){ last=ids[ids.length-1]; break; } }
+  if(!last) return "";
+  var m=last.match(/^(.*?)(\d+)$/); if(!m) return "";
+  var used=calloutCounts(), n=parseInt(m[2],10)+1, cand;
+  do { cand=m[1]+n; n++; } while(used[cand.toUpperCase()]);
+  return cand;
+}
+function recentLocations(trade){
+  var seen={}, out=[];
+  for(var i=state.rows.length-1;i>=0 && out.length<3;i--){ var l=t(state.rows[i].location); if(l && !seen[l.toLowerCase()]){ seen[l.toLowerCase()]=1; out.push(l); } }
+  return out;
+}
+function tipsFor(step, trade){
+  var tp=[];
+  if(step==="callout") tp.push("Use the ID you wrote on the sketch or plan set. One ID per item of work.");
+  if(step==="material"||step==="location"||step==="qty"||step==="finish"||step==="action"){ var rh=ruleHint(trade, step); if(rh) tp.push(rh); }
+  if(step==="action"){
+    tp.push("New row when the Action or the Material changes.");
+    tp.push("Detach & reset (take off, put the same piece back): the same item goes back in. Not new material.");
+    if(trade==="PNT") tp.push("Paint = replace (a new coat with materials). Decided by Ben, 2026-10-08.");
+    if(trade==="GC") tp.push("n/a is for GC only, when there's no remove/install story.");
+    if(trade==="DEMO"||trade==="MIT") tp.push(trade+" is usually remove only.");
+  }
+  if(step==="material"){
+    tp.push("One material per row. \"Carpet and pad\" is two rows.");
+    if(trade==="FLR"||trade==="GC") tp.push("Floor protection goes under GC, not FLR. So does anything else that covers several trades.");
+    if(trade==="DRY"||trade==="PNT") tp.push("Tape, texture and primer stay inside DRY or PNT. They aren't their own rows.");
+    if(trade==="MECH"||trade==="PLUMB"||trade==="ELEC") tp.push("Material = the system or fixture class (e.g. toilet, water heater), not every SKU.");
+    if(trade==="TILE") tp.push("Waterproof membrane / tile shower system goes under TILE. Drain and faucet go under PLUMB.");
+  }
+  if(step==="material" && trade==="CAB") tp.push("Countertop: Which countertop runs are laminate, which are wood (or laminate made to look like wood)?");
+  if(step==="finish"){
+    tp.push("State the existing quality as the like-kind baseline (the client is owed like-kind). Later selections are an upgrade or downgrade from this baseline — not open holds.");
+    tp.push("Describe it so a sub could bid it without seeing it: material, color, style, how it's built. No grade words on their own.");
+    tp.push("Client choosing something different? Put it in Selection (Table tab), e.g. \"Selection pending client\". The Finish stays the baseline.");
+  }
+  if(step==="qty") tp.push("A wrong qty is fine; it changes in the next version. A range (e.g. 96-128) is only OK on a hold.");
+  if(step==="status") tp.push("Skipped Material, Qty or Finish? Then this item has to be a hold.");
+  return tp;
+}
+function stepLabel(r,s){ return (s==="material" && r && r.trade==="GC") ? "Item (what it is)" : STEP_Q[s]; }
+var STEP_Q={callout:"Callout ID",action:"Action",material:"Material",location:"Location",qty:"Qty",unit:"Unit",finish:"Finish",status:"Status",note:"Note"};
+var DEFAULT_ORDER=["GC","DEMO","MIT","PLUMB","MECH","ELEC","FRAM","INSUL","DRY","TILE","CAB","DOOR","FLR","TRIM","PNT","EXT","ROOF","CLN"];
+function orderIdx(c){ var i=DEFAULT_ORDER.indexOf(c); return i<0?99:i; }
+function tradeRows(c){ return state.rows.filter(function(x){return x.trade===c;}).length; }
+function isSkipped(c){ return W().skipped.indexOf(c)>=0; }
+function unskip(c){ var w=W(), i=w.skipped.indexOf(c); if(i>=0) w.skipped.splice(i,1); }
+function nextOpenAfter(i){ var w=W(); for(var j=i+1;j<w.trades.length;j++) if(!isSkipped(w.trades[j])) return j; return -1; }
+function firstOpen(){ var w=W(), j; if(w.curTrade && w.trades.indexOf(w.curTrade)>=0 && !isSkipped(w.curTrade)) return w.trades.indexOf(w.curTrade);
+  for(j=0;j<w.trades.length;j++) if(!isSkipped(w.trades[j]) && !tradeRows(w.trades[j])) return j;
+  for(j=0;j<w.trades.length;j++) if(!isSkipped(w.trades[j])) return j; return 0; }
+function rowEmpty(r){ var pre="r:"+r.id+":"; return FIELDS.every(function(f){ return f==="trade" || !t(r[f]); }) && !Object.keys(state.fnotes||{}).some(function(k){return k.indexOf(pre)===0;}); }
+function leaveItem(){ // keep what was typed; drop a blank, untouched item
+  var w=W(), r=walkRow();
+  if(r && w.phase==="item"){ var inp=$("w-in"); if(inp) r[w.step]=inp.value; }
+  if(r && rowEmpty(r)) state.rows=state.rows.filter(function(x){return x.id!==r.id;});
+  w.rowId=null;
+}
+function gotoTrade(i){ // jump to a trade: open its overview if it has items, else start its first item
+  var w=W(); if(i<0||i>=w.trades.length) return;
+  leaveItem(); w.ti=i; w.curTrade=w.trades[i]; unskip(w.trades[i]); w.lastCancel=false;
+  if(tradeRows(w.trades[i])){ w.phase="done"; changed(); renderWalk(); scrollWalk(); } else startItem(w.trades[i]);
+}
+function moveOn(){ var w=W(), j=nextOpenAfter(w.ti); if(j<0){ leaveItem(); w.phase="complete"; changed(); renderWalk(); scrollWalk(); } else gotoTrade(j); }
+function tradeBarHTML(cur){
+  var w=W();
+  return '<div class="tradebar" id="w-tradebar"><span class="hint">Jump to:</span>'+w.trades.map(function(c,i){ var n=tradeRows(c);
+    return '<button type="button" class="tchip'+(c===cur?' cur':'')+(isSkipped(c)?' skip':'')+'" data-wjump="'+i+'" title="'+esc(CODE_NAME[c]||c)+(isSkipped(c)?' (skipped, tap to go back to it)':'')+'">'+esc(c)+(n?' <small>'+n+'</small>':'')+'</button>'; }).join("")+
+    '<span class="sp">'+(cur && w.phase!=="complete"?'<button type="button" class="sm" id="w-skip">Skip this trade for now</button>':'')+'<button type="button" class="sm" id="w-edittrades">Add / remove / reorder trades</button></span></div>';
+}
+function renderWalk(){
+  var w=W(), box=$("pane-walk"), h="";
+  if(w.phase==="pick"){
+    var counts={}; state.rows.forEach(function(r){ if(r.trade) counts[r.trade]=(counts[r.trade]||0)+1; });
+    h+='<p style="margin:0 0 8px"><b>Tick every Trade that applies.</b> They go into the suggested order below. Move them with ↑ ↓. During the walk you can jump to any trade, skip one for now, or come back here to add or remove trades.</p>';
+    h+='<div class="tradegrid">'+CODES.map(function(c){ var on=w.trades.indexOf(c[0])>=0;
+      return '<label class="'+(on?'on':'')+'"><input type="checkbox" data-wtrade="'+c[0]+'"'+(on?' checked':'')+'><span><b>'+c[0]+'</b> '+esc(c[1])+'</span>'+(counts[c[0]]?'<span class="cnt">'+counts[c[0]]+' row'+(counts[c[0]]>1?'s':'')+'</span>':'')+'</label>'; }).join("")+'</div>';
+    h+=noteUI("h:trades");
+    if(w.trades.length){
+      h+='<div style="margin-top:10px"><b>Walk order</b> <button type="button" class="sm" id="w-sugorder">Use suggested order</button><ol class="tord" id="w-order">'+w.trades.map(function(c,i){
+        return '<li><div class="tl"><span><b>'+esc(c)+'</b> '+esc(CODE_NAME[c]||"")+'</span>'+(counts[c]?'<span class="pill">'+counts[c]+' row'+(counts[c]>1?'s':'')+'</span>':'')+(isSkipped(c)?'<span class="pill h">skipped</span>':'')+
+          '<span class="sp"><button type="button" class="sm" data-wmove="'+i+'" data-dir="-1" aria-label="Move '+esc(c)+' up"'+(i===0?' disabled':'')+'>↑</button><button type="button" class="sm" data-wmove="'+i+'" data-dir="1" aria-label="Move '+esc(c)+' down"'+(i===w.trades.length-1?' disabled':'')+'>↓</button><button type="button" class="sm" data-wrm="'+esc(c)+'" aria-label="Remove '+esc(c)+' from the walk">✕</button></span></div></li>'; }).join("")+'</ol>'+
+        '<div class="hint">Removing a trade from the walk doesn\'t delete its rows. Delete rows in the Table.</div></div>';
+    }
+    h+='<div class="tips"><div>Floor protection (and anything else that covers several trades) goes under GC. "Carpet and pad" is two rows. Detach & reset (take off, put the same piece back) = the same item goes back in.</div></div>';
+    var started = w.started && state.rows.length;
+    h+='<div class="wnav"><button type="button" class="pri" id="w-start"'+(w.trades.length?'':' disabled')+'>'+(started?'Continue walk':'Start walk')+' ('+w.trades.length+' trade'+(w.trades.length===1?'':'s')+')</button></div>';
+    h+='<label class="f" style="margin-top:14px"><span class="l">Scope walk notes (optional)</span><textarea id="w-notes" data-mic placeholder="Anything you noticed on the walk. This doesn\'t replace the inspection report.">'+esc(state.header.walkNotes)+'</textarea>'+noteUI("h:walkNotes")+'</label>';
+  } else if(w.phase==="item"){
+    var r=walkRow(); if(!r){ r=newRow(w.trades[w.ti]); state.rows.push(r); w.rowId=r.id; w.step="callout"; }
+    var trade=r.trade, items=state.rows.filter(function(x){return x.trade===trade;}), itemNo=items.indexOf(r)+1;
+    w.curTrade=trade; h+=tradeBarHTML(trade);
+    h+='<div class="walk"><div class="prog"><b>'+esc(trade)+' — '+esc(CODE_NAME[trade]||"")+'</b><span>Trade '+(w.ti+1)+' of '+w.trades.length+'</span><span>· Item '+itemNo+'</span></div>';
+    h+='<div class="dots">'+STEPS.filter(function(s){return s!=="note"||stepApplies(r,"note");}).map(function(s){ var si=STEPS.indexOf(s), ci=STEPS.indexOf(w.step); return '<span class="'+(si<ci?'done':si===ci?'cur':'')+'"></span>'; }).join("")+'</div>';
+    h+=promptHTML(r, w.step);
+    var tp=tipsFor(w.step, trade); if(tp.length) h+='<div class="tips">'+tp.map(function(x){return '<div>'+esc(x)+'</div>';}).join("")+'</div>';
+    h+='<div class="msg" id="w-err" style="font-size:14px;margin-top:8px"></div>';
+    var isChoice = w.step==="action"||w.step==="unit"||w.step==="status";
+    h+='<div class="wnav"><button type="button" class="back" id="w-back"'+(prevStepOf(r,w.step)?'':' disabled')+'>Back</button>'+(isChoice?'':'<button type="button" class="pri" id="w-next">Next</button>')+'</div>';
+    h+='<div class="quick" style="justify-content:space-between"><button type="button" class="sm" id="w-cancel">Cancel this item</button><button type="button" class="sm" id="w-exit">Exit to table</button></div></div>';
+  } else if(w.phase==="done"){
+    var r2=walkRow(), trade2=w.trades[w.ti], nxi=nextOpenAfter(w.ti), last=nxi<0;
+    h+=tradeBarHTML(trade2);
+    h+='<div class="walk"><div class="prog"><b>'+esc(trade2)+' — '+esc(CODE_NAME[trade2]||"")+'</b><span>Trade '+(w.ti+1)+' of '+w.trades.length+'</span></div>';
+    if(r2){ var v=validateRow(r2, calloutCounts());
+      h+='<div class="itemsum" id="w-sum"><b>'+esc(r2.callout)+' · '+esc(r2.action)+' · '+esc(r2.material||"(material TBD)")+'</b><br>'+esc(r2.location)+' · '+esc(r2.qty?r2.qty+" "+(r2.unit||""):"qty TBD")+' · '+esc(r2.finish||"finish TBD")+' · <b>'+esc(r2.status)+'</b>'+(r2.note?'<br><i>'+esc(r2.note)+'</i>':'')+
+        (Object.keys(v.e).length?'<div class="msg">'+esc(Object.keys(v.e).map(function(k){return v.e[k];}).join(" "))+'</div>':'')+(v.w.length?'<div class="warns">'+v.w.map(function(x){return '<div>'+esc(x)+'</div>';}).join("")+'</div>':'')+'</div>';
+    } else {
+      var have=state.rows.filter(function(x){return x.trade===trade2;});
+      h+='<div class="itemsum" id="w-sum">'+(w.lastCancel?'Item cancelled. ':'')+(have.length?'<b>'+have.length+' item'+(have.length>1?'s':'')+' already in '+esc(trade2)+':</b><br>'+have.map(function(x){return esc((t(x.callout)||"(no callout)")+" · "+(x.action||"")+" · "+(t(x.material)||"(material TBD)")+" · "+t(x.location));}).join("<br>"):'No items in this trade yet.')+'</div>';
+    }
+    h+='<div class="bigbtns"><button type="button" id="w-another">+ Add '+(state.rows.some(function(x){return x.trade===trade2;})?'another ':'an ')+'item in this Trade</button><button type="button" class="pri" id="w-nexttrade">'+(last?'Finish walk':'Next Trade → '+esc(w.trades[nxi]))+'</button></div>';
+    h+='<div class="quick" style="justify-content:space-between">'+(r2?'<button type="button" class="sm" id="w-edit">Change this item</button>':'<span></span>')+'<button type="button" class="sm" id="w-exit">Exit to table</button></div></div>';
+  } else if(w.phase==="complete"){
+    var n=state.rows.length;
+    h+=tradeBarHTML(null);
+    var sk=w.skipped.filter(function(c){return w.trades.indexOf(c)>=0;});
+    h+='<div class="walk"><div class="q">Walk complete</div><p>'+n+' row'+(n===1?'':'s')+' in the table. Review them in the Table, then run <b>Check complete</b>.</p>'+
+      (sk.length?'<div class="cmwarn" id="w-skipped" style="font-size:14px;margin-bottom:8px">Skipped for now: '+sk.map(function(c){return '<button type="button" class="sm" data-wjump="'+w.trades.indexOf(c)+'">'+esc(c)+' →</button>';}).join(" ")+'</div>':'');
+    h+='<div class="bigbtns"><button type="button" class="pri" id="w-totable">Review in Table</button><button type="button" id="w-more">Walk more trades</button></div></div>';
+    h+='<label class="f" style="margin-top:14px"><span class="l">Scope walk notes (optional)</span><textarea id="w-notes" data-mic>'+esc(state.header.walkNotes)+'</textarea>'+noteUI("h:walkNotes")+'</label>';
+  }
+  box.innerHTML=h;
+  attachMics(box);
+  var inp=$("w-in"); if(inp && w.phase==="item"){ try{ inp.focus({preventScroll:true}); }catch(e){} }
+}
+function promptHTML(r, s){
+  var h='<div class="q" id="w-q"><span>'+stepLabel(r,s)+'</span>';
+  var input=function(type, extra){ return '<input class="big" id="w-in" value="'+esc(r[s])+'" autocomplete="off" '+(extra||'')+' data-mic'+(s==="qty"?' data-num':'')+'>'; };
+  if(s==="callout"){
+    h+='</div>'+input("text",'autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="next"');
+    var sug=suggestCallout(); if(sug && !t(r.callout)) h+='<div class="quick"><button type="button" data-wfill="'+esc(sug)+'">Use next: '+esc(sug)+'</button></div>';
+  } else if(s==="action"){
+    h+='</div><div class="choices">'+ACTIONS.map(function(a){ var dis = a==="n/a" && r.trade!=="GC";
+      return '<button type="button" data-wpick="'+esc(a)+'" class="'+(r.action===a?'sel':'')+'"'+(dis?' disabled':'')+'>'+esc(a)+'<small>'+esc(dis?"GC only":ACTION_HINT[a])+'</small></button>'; }).join("")+'</div>';
+  } else if(s==="material"){
+    h+='</div>'+input("text",'autocapitalize="sentences" enterkeyhint="next"')+'<div class="quick"><button type="button" data-wskip="1">Not known yet (hold)</button></div>';
+  } else if(s==="location"){
+    h+='</div>'+input("text",'autocapitalize="sentences" enterkeyhint="next"');
+    var rl=recentLocations(); if(rl.length) h+='<div class="quick">'+rl.map(function(l){return '<button type="button" data-wfill="'+esc(l)+'">'+esc(l)+'</button>';}).join("")+'</div>';
+  } else if(s==="qty"){
+    h+='</div>'+input("text",'inputmode="text" enterkeyhint="next"')+'<div class="hint">Type or say it: "14", "fourteen", "250 square feet".</div><div class="quick"><button type="button" data-wskip="1">Not known yet (hold)</button></div>';
+  } else if(s==="unit"){
+    h+='</div><div class="choices">'+UNITS.map(function(u){ return '<button type="button" data-wpick="'+u+'" class="'+(r.unit===u?'sel':'')+'">'+u+'</button>'; }).join("")+'</div>';
+  } else if(s==="finish"){
+    h+='</div>'+input("text",'autocapitalize="sentences" enterkeyhint="next"')+'<div class="quick"><button type="button" data-wfill="None">None</button><button type="button" data-wfill="Match existing">Match existing</button><button type="button" data-wskip="1">Not known yet (hold)</button></div>';
+  } else if(s==="status"){
+    var miss=softMissing(r), rng=looksRange(r.qty), block = miss.length>0 || rng;
+    h+='</div><div class="choices">'+STATUSES.map(function(st){ var dis = st!=="hold" && block;
+      return '<button type="button" data-wpick="'+st+'" class="'+(r.status===st?'sel':'')+'"'+(dis?' disabled':'')+'>'+st+'<small>'+esc(STATUS_HINT[st])+'</small></button>'; }).join("")+'</div>';
+    if(block) h+='<div class="hint" style="margin-top:6px">Only hold is open: '+(rng?'the qty is a range':'no '+miss.join(", "))+'. Go Back to fill it in if you know it.</div>';
+  } else if(s==="note"){
+    h+='</div><textarea class="big" id="w-in" data-mic placeholder="'+(r.status==="assumed"?"What did you assume? (required)":"What's holding it, and what releases it?")+'">'+esc(r.note)+'</textarea>';
+  }
+  h+=noteUI("r:"+r.id+":"+s);
+  return h;
+}
+function walkErr(m){ var e=$("w-err"); if(e) e.textContent=m||""; }
+function walkCommitInput(skip){
+  var w=W(), r=walkRow(), s=w.step, inp=$("w-in"); if(!r) return false;
+  if(inp && !skip) r[s]=inp.value;
+  if(skip){ r[s]=""; if(s==="qty") r.unit=""; }
+  if(s==="callout"){
+    if(!t(r.callout)) return walkErr("Enter the callout ID from your sketch."), false;
+    var mine=uniq(parseIds(r.callout)).map(function(x){return x.toUpperCase();}), counts=calloutCounts(), clash=mine.filter(function(k){return counts[k]>1;});
+    if(clash.length) return walkErr("Callout "+clash.join(", ")+" is already on another row. Each callout matches exactly one row."), false;
+  }
+  if(s==="material" && !skip && !t(r.material)) return walkErr("Enter the material, or tap \"Not known yet (hold)\"."), false;
+  if(s==="location" && !t(r.location)) return walkErr("Location is required."), false;
+  if(s==="qty" && !skip){
+    if(!t(r.qty)) return walkErr("Enter a qty, or tap \"Not known yet (hold)\"."), false;
+    normalizeQty(r);
+    if(!isNum(r.qty) && !looksRange(r.qty)) return walkErr("Couldn't read that as a number. Try digits, e.g. 14."), false;
+    if(isNum(r.qty) && parseFloat(r.qty)<=0) return walkErr("Qty must be more than 0."), false;
+  }
+  if(s==="finish" && !skip && !t(r.finish)) return walkErr("Enter the finish, tap None, or tap \"Not known yet (hold)\"."), false;
+  if(s==="note" && r.status==="assumed" && !t(r.note)) return walkErr("Assumed: say what was assumed."), false;
+  r.touched=true;
+  return true;
+}
+function walkAdvance(){
+  var w=W(), r=walkRow(), nx=nextStepOf(r, w.step);
+  if(nx) w.step=nx; else w.phase="done";
+  changed(); renderWalk(); scrollWalk();
+}
+function scrollWalk(){ var el=document.querySelector("#pane-walk .walk"); if(el){ var y=el.getBoundingClientRect().top+window.scrollY-70; window.scrollTo({top:y}); } }
+function startItem(trade){ var w=W(), r=newRow(trade); state.rows.push(r); w.rowId=r.id; w.step="callout"; w.phase="item"; w.started=true; w.curTrade=trade; w.lastCancel=false; unskip(trade); changed(); renderWalk(); scrollWalk(); }
+function bindWalk(){
+  var box=$("pane-walk");
+  box.addEventListener("change",function(e){
+    var tr=e.target.getAttribute("data-wtrade");
+    if(tr){ var w=W(), i=w.trades.indexOf(tr);
+      if(e.target.checked && i<0){ var at=w.trades.length; for(var j=0;j<w.trades.length;j++) if(orderIdx(w.trades[j])>orderIdx(tr)){ at=j; break; } w.trades.splice(at,0,tr); }
+      if(!e.target.checked && i>=0){ w.trades.splice(i,1); unskip(tr); }
+      save(); renderWalk(); }
+  });
+  box.addEventListener("input",function(e){ if(e.target.id==="w-notes"){ state.header.walkNotes=e.target.value; changed(); } });
+  box.addEventListener("keydown",function(e){ if(e.key==="Enter" && e.target.id==="w-in" && e.target.tagName==="INPUT"){ e.preventDefault(); var b=$("w-next"); if(b) b.click(); } });
+  box.addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b || b.disabled) return;
+    var w=W(), r=walkRow();
+    if(b.id==="w-start"){ if(!w.trades.length) return; gotoTrade(w.started && state.rows.length ? firstOpen() : 0); return; }
+    if(b.hasAttribute("data-wjump")){ gotoTrade(+b.getAttribute("data-wjump")); return; }
+    if(b.hasAttribute("data-wmove")){ var mi=+b.getAttribute("data-wmove"), mj=mi+(+b.getAttribute("data-dir")); if(mj<0||mj>=w.trades.length) return; var tmp=w.trades[mi]; w.trades[mi]=w.trades[mj]; w.trades[mj]=tmp; save(); renderWalk(); return; }
+    if(b.hasAttribute("data-wrm")){ var rc=b.getAttribute("data-wrm"), ri=w.trades.indexOf(rc); if(ri>=0) w.trades.splice(ri,1); unskip(rc); save(); renderWalk(); return; }
+    if(b.id==="w-sugorder"){ w.trades.sort(function(a,c){return orderIdx(a)-orderIdx(c);}); save(); renderWalk(); return; }
+    if(b.id==="w-skip"){ var cur=w.trades[w.ti]; if(w.phase==="item" && r) cur=r.trade; if(cur && w.skipped.indexOf(cur)<0) w.skipped.push(cur); var ci=w.trades.indexOf(cur); if(ci>=0) w.ti=ci; leaveItem(); moveOn(); return; }
+    if(b.id==="w-edittrades"){ leaveItem(); w.phase="pick"; changed(); renderWalk(); return; }
+    if(b.id==="w-next"){ if(walkCommitInput(false)) walkAdvance(); return; }
+    if(b.hasAttribute("data-wskip")){ if(walkCommitInput(true)) walkAdvance(); return; }
+    if(b.hasAttribute("data-wfill")){ var inp=$("w-in"); inp.value=b.getAttribute("data-wfill"); inp.focus(); return; }
+    if(b.hasAttribute("data-wpick")){ r[w.step]=b.getAttribute("data-wpick"); r.touched=true;
+      if(w.step==="status" && r.status==="known") r.note=r.note; walkAdvance(); return; }
+    if(b.id==="w-back"){ var pv=prevStepOf(r,w.step); if(pv){ var inp2=$("w-in"); if(inp2) r[w.step]=inp2.value; w.step=pv; changed(); renderWalk(); } return; }
+    if(b.id==="w-cancel"){ if(!confirm("Cancel this item? Its row is removed.")) return; fnPrune(w.rowId); state.rows=state.rows.filter(function(x){return x.id!==w.rowId;}); w.rowId=null; w.phase="done"; w.lastCancel=true; changed(); renderWalk(); return; }
+    if(b.id==="w-exit"){ if(w.phase==="item"){ var inp3=$("w-in"); if(inp3 && r) r[w.step]=inp3.value; } setTab("table"); return; }
+    if(b.id==="w-another"){ startItem(w.trades[w.ti]); return; }
+    if(b.id==="w-nexttrade"){ moveOn(); return; }
+    if(b.id==="w-edit"){ w.phase="item"; w.step="callout"; renderWalk(); return; }
+    if(b.id==="w-totable"){ setTab("table"); return; }
+    if(b.id==="w-more"){ w.phase="pick"; save(); renderWalk(); return; }
+  });
+}
+// ---------- full check ----------
+function runCheck(){
+  state.checked=true;
+  var problems=[], he=validateHeader(), counts=calloutCounts();
+  Object.keys(he).forEach(function(k){ problems.push({where:"Job", msg:he[k]}); });
+  if(!state.rows.length) problems.push({where:"Rows", msg:"No scope rows. A Level 2 table needs at least one row."});
+  state.rows.forEach(function(r,i){
+    var v=validateRow(r,counts);
+    Object.keys(v.e).forEach(function(k){ problems.push({where:"Row "+(i+1)+(r.callout?" ("+t(r.callout)+")":""), msg:v.e[k]}); });
+  });
+  if(!state.attest) problems.push({where:"Sketch", msg:"Confirm every callout on your sketch / plan set has exactly one row."});
+  var pass = problems.length===0;
+  if(pass){ state.passedHash=contentHash(); state.passedAt=new Date().toISOString(); }
+  else { state.passedHash=null; state.passedAt=null; }
+  if(state.tab==="table") refreshValidation(); else { renderRows(); }
+  renderResult({pass:pass, problems:problems}); updateExportButtons(); save();
+  $("result").scrollIntoView({behavior:"smooth",block:"start"});
+  return pass;
+}
+function stats(rows){
+  rows=rows||state.rows;
+  var s={rows:rows.length,known:0,assumed:0,hold:0,trades:{}};
+  rows.forEach(function(r){ if(s[r.status]!=null) s[r.status]++; if(r.trade) s.trades[r.trade]=(s.trades[r.trade]||0)+1; });
+  return s;
+}
+function verLabel(n){ return "v"+n+(n===1?" (benchmark)":""); }
+function renderResult(res){
+  var box=$("result");
+  lastResultHash = res ? contentHash() : null;
+  if(!res){ box.innerHTML = state.checked? '<div class="result fail" id="res-stale">Something changed since the last check. Run <b>Check complete</b> again before exporting.</div>' : ""; return; }
+  var s=stats(), holds=state.rows.filter(function(r){return r.status==="hold";});
+  var st='<div class="stats"><div class="stat"><b>'+verLabel(state.version)+'</b>table</div><div class="stat"><b>'+s.rows+'</b>rows</div><div class="stat"><b>'+s.known+'</b>known</div><div class="stat"><b>'+s.assumed+'</b>assumed</div><div class="stat"><b>'+s.hold+'</b>hold</div><div class="stat"><b>'+Object.keys(s.trades).length+'</b>Cost Groups</div></div>';
+  var ch=""; if(state.prior.length){ var c=computeChanges(state.prior[0].rows, state.rows); ch='<div>Changes vs Benchmark v1: <b>'+c.added.length+'</b> added, <b>'+c.changed.length+'</b> changed, <b>'+c.removed.length+'</b> removed.</div>';
+    if(state.prior.length>1){ var pv=state.prior[state.prior.length-1], c2=computeChanges(pv.rows, state.rows); ch+='<div id="res-chg-prev">Changes vs v'+pv.version+': <b>'+c2.added.length+'</b> added, <b>'+c2.changed.length+'</b> changed, <b>'+c2.removed.length+'</b> removed.</div>'; } }
+  var h;
+  if(res.pass){
+    h='<div class="result pass" id="res-pass"><b>Level 2 table complete.</b> Checked '+esc(fmtStamp(new Date(state.passedAt)))+'. Export is unlocked.'+st+ch+
+      (holds.length? '<div><b>'+holds.length+' hold'+(holds.length>1?'s':'')+' flagged</b> (allowed; stay unpriced until released):<ul>'+holds.map(function(r){return '<li>'+esc(t(r.callout))+' · '+esc(r.trade)+' · '+esc(t(r.location))+(t(r.note)?' — '+esc(t(r.note)):' — <i>no note</i>')+'</li>';}).join("")+'</ul></div>' : '<div>No holds.</div>')+'</div>';
+  } else {
+    h='<div class="result fail" id="res-fail"><b>Not complete: '+res.problems.length+' thing'+(res.problems.length>1?'s':'')+' to fix.</b> Export stays locked until all pass.'+st+
+      '<ul>'+res.problems.map(function(p){return '<li><b>'+esc(p.where)+':</b> '+esc(p.msg)+'</li>';}).join("")+'</ul></div>';
+  }
+  h+=previewTable(state.rows);
+  box.innerHTML=h;
+}
+function previewTable(rows){
+  return '<div class="tblwrap"><table class="pv"><thead><tr>'+TABLE_COLS.map(function(c){return '<th>'+esc(c)+'</th>';}).join("")+'</tr></thead><tbody>'+
+     tableRows(rows).map(function(row,i){return '<tr class="'+(rows[i].status==="hold"?"hold":"")+'">'+row.map(function(c){return '<td>'+esc(c)+'</td>';}).join("")+'</tr>';}).join("")+'</tbody></table></div>';
+}
+function canExport(){ return !!state.passedHash && state.passedHash===contentHash(); }
+function updateExportButtons(){
+  var ok = canExport();
+  $("btn-xlsx").disabled=!ok; $("btn-csv").disabled=!ok; $("btn-share").disabled=!ok;
+  $("btn-rev").disabled=!ok; $("btn-rev").textContent="Start revision (v"+(state.version+1)+")";
+  $("ver-hint").textContent = "This table is "+verLabel(state.version)+". "+(ok?"Start a revision to record later findings or selections; the current version is kept read-only.":"Start revision unlocks once this version passes Check complete.");
+  var lbl="Table "+verLabel(state.version); $("tv-badge").textContent=lbl; $("tv-pill").textContent=lbl;
+}
+
+// ---------- versions ----------
+function snapshotRows(rows){ return rows.map(function(r){ var o={id:r.id}; FIELDS.forEach(function(f){o[f]=r[f];}); return o; }); }
+function computeChanges(base, cur){
+  var bm={}, cm={}, out={added:[],removed:[],changed:[]};
+  base.forEach(function(r){bm[r.id]=r;}); cur.forEach(function(r){cm[r.id]=r;});
+  cur.forEach(function(r){ var b=bm[r.id]; if(!b){ out.added.push(r); return; }
+    var diffs=FIELDS.filter(function(f){return t(b[f])!==t(r[f]);}).map(function(f){return {f:f,old:t(b[f]),nw:t(r[f])};});
+    if(diffs.length) out.changed.push({row:r,base:b,diffs:diffs}); });
+  base.forEach(function(r){ if(!cm[r.id]) out.removed.push(r); });
+  return out;
+}
+function startRevision(){
+  if(!canExport()) return;
+  var n=state.version+1;
+  if(!confirm("Start revision v"+n+"? "+verLabel(state.version)+" is kept read-only and goes into the export"+(state.version===1?" as the Benchmark v1 sheet":"")+". You then edit v"+n+".")) return;
+  state.prior.push({version:state.version, header:JSON.parse(JSON.stringify(state.header)), rows:snapshotRows(state.rows), passedAt:state.passedAt});
+  state.version=n; state.passedHash=null; state.passedAt=null; state.checked=false; state.attest=false; lastResultHash=null;
+  $("attest").checked=false; $("result").innerHTML=""; renderPrior(); updateExportButtons(); renderLanding(); save();
+}
+function renderPrior(){
+  $("prior").innerHTML = state.prior.map(function(p){
+    var s=stats(p.rows);
+    return '<details class="prior"><summary>'+(p.version===1?"Benchmark v1":"Version v"+p.version)+' (read-only) · '+s.rows+' rows · '+s.hold+' hold · checked '+esc(p.passedAt?fmtStamp(new Date(p.passedAt)):"")+'</summary>'+previewTable(p.rows)+'</details>';
+  }).join("");
+}
+
+// ---------- export ----------
+// v1.2: "Selection" added as the LAST column so the first 11 columns keep the v1.0/v1.1 order.
+var TABLE_COLS=["Callout ID(s)","Trade / code","Cost Group","Action","Location","Qty","Unit","Material","Finish","Status","Note","Selection"];
+function normIds(s){ return parseIds(s).join(", "); }
+function tableRows(rows){
+  return (rows||state.rows).map(function(r){
+    var q=t(r.qty), qn = isNum(q) ? parseFloat(q.replace(/,/g,"")) : q;
+    return [normIds(r.callout), r.trade, CODE_NAME[r.trade]||"", r.action, t(r.location), qn, r.unit||"", t(r.material), t(r.finish), r.status, t(r.note), t(r.selection)];
+  });
+}
+function fileBase(){
+  var j=t(state.header.job).replace(/[^A-Za-z0-9 _.-]+/g,"").replace(/\s+/g,"_").replace(/_+/g,"_").replace(/^[_.-]+|[_.-]+$/g,"") || "Job";
+  return j+"_L2_PlanSet_v"+state.version+"_"+(state.header.sdateA||todayISO());
+}
+function download(name, mime, data){
+  var blob = new Blob([data], {type:mime});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();}, 1500);
+}
+function exportCSV(){
+  if(!canExport()){ alert("Run Check complete first. Export only works when everything passes."); return; }
+  var lines=[TABLE_COLS].concat(tableRows()).map(function(row){return row.map(function(c){var s=String(c==null?"":c); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");});
+  download(fileBase()+".csv","text/csv;charset=utf-8","\ufeff"+lines.join("\r\n")+"\r\n");
+  flash("CSV downloaded: "+fileBase()+".csv");
+}
+function exportXLSX(){
+  if(!canExport()){ alert("Run Check complete first. Export only works when everything passes."); return; }
+  download(fileBase()+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buildXlsx());
+  flash("Excel file downloaded: "+fileBase()+".xlsx");
+}
+function renderLanding(){ $("landing").innerHTML='Landing spot: <b>not decided yet</b>. For now the file downloads to this device. When the agreed location is decided, the table goes there with the annotated visuals.'; }
+function flash(msg){ $("landing").innerHTML='<b style="color:var(--ok)">'+esc(msg)+'.</b> Landing spot: <b>not decided yet</b>. When the agreed location is decided, this file goes there with the annotated visuals.'; }
+
+// ---- minimal xlsx (OOXML) writer: stored zip, inline strings ----
+var CRC_T=(function(){var t=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=CRC_T[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zip(files){
+  var enc=new TextEncoder(), parts=[], central=[], off=0, d=new Date();
+  var dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF, dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  files.forEach(function(f){
+    var name=enc.encode(f.name), data=enc.encode(f.data), crc=crc32(data);
+    var lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer),name,data);
+    var ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,0,true);ch.setUint16(12,dt,true);ch.setUint16(14,dd,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,name.length,true);
+    ch.setUint16(30,0,true);ch.setUint16(32,0,true);ch.setUint16(34,0,true);ch.setUint16(36,0,true);ch.setUint32(38,0,true);ch.setUint32(42,off,true);
+    central.push(new Uint8Array(ch.buffer),name);
+    off+=30+name.length+data.length;
+  });
+  var csize=central.reduce(function(a,b){return a+b.length;},0);
+  var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);e.setUint16(20,0,true);
+  var all=parts.concat(central,[new Uint8Array(e.buffer)]), total=all.reduce(function(a,b){return a+b.length;},0), out=new Uint8Array(total), p=0;
+  all.forEach(function(a){out.set(a,p);p+=a.length;});
+  return out;
+}
+function xesc(s){return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function colL(i){var s="";i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
+function cell(ref,v,style){
+  var s=style?' s="'+style+'"':'';
+  if(v===null||v===undefined||v==="") return style?'<c r="'+ref+'"'+s+'/>':'';
+  if(typeof v==="number" && isFinite(v)) return '<c r="'+ref+'"'+s+'><v>'+v+'</v></c>';
+  return '<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>';
+}
+// rows: array of {cells:[], style:n or [per-cell]}
+function sheetXml(rows, opt){
+  opt=opt||{};
+  var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  var maxC=rows.reduce(function(a,r){return Math.max(a,r.cells.length);},1);
+  x+='<dimension ref="A1:'+colL(maxC-1)+Math.max(rows.length,1)+'"/>';
+  x+='<sheetViews><sheetView workbookViewId="0"'+(opt.tab0?' tabSelected="1"':'')+'>'+(opt.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>':'')+'</sheetView></sheetViews>';
+  x+='<sheetFormatPr defaultRowHeight="15"/>';
+  if(opt.widths){ x+='<cols>'+opt.widths.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}).join("")+'</cols>'; }
+  x+='<sheetData>';
+  rows.forEach(function(r,ri){
+    x+='<row r="'+(ri+1)+'">';
+    r.cells.forEach(function(v,ci){ var st=Array.isArray(r.style)?r.style[ci]:r.style; x+=cell(colL(ci)+(ri+1),v,st||0); });
+    x+='</row>';
+  });
+  x+='</sheetData>';
+  if(opt.protect) x+='<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" formatColumns="0" formatRows="0" sort="0" autoFilter="0"/>';
+  if(opt.filter) x+='<autoFilter ref="'+opt.filter+'"/>';
+  if(opt.dv) x+='<dataValidations count="'+opt.dv.length+'">'+opt.dv.map(function(d){return '<dataValidation type="list" allowBlank="1" showErrorMessage="1" sqref="'+d.sqref+'"><formula1>"'+xesc(d.list)+'"</formula1></dataValidation>';}).join("")+'</dataValidations>';
+  x+='<pageMargins left="0.5" right="0.5" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>';
+  if(opt.landscape) x+='<pageSetup orientation="landscape"/>';
+  x+='</worksheet>';
+  return x;
+}
+function buildXlsx(){
+  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+   '<fonts count="3"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="14"/><name val="Calibri"/><family val="2"/></font></fonts>'+
+   '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E1EC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF3C4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+   '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF8A96A8"/></bottom><diagonal/></border></borders>'+
+   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+   '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+   '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs>'+
+   '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var WID=[14,11,22,18,28,8,7,26,26,10,40,26];
+  function tableSheet(rows, protect, first){
+    var tr=tableRows(rows), n=tr.length+1;
+    var srows=[{cells:TABLE_COLS,style:1}].concat(tr.map(function(row,i){return {cells:row,style:rows[i].status==="hold"?3:2};}));
+    return {xml:sheetXml(srows,{tab0:first,freeze:true,widths:WID,filter:protect?null:"A1:L"+n,protect:protect,
+      dv:protect?null:[{sqref:"J2:J200",list:STATUSES.join(",")},{sqref:"D2:D200",list:ACTIONS.join(",")}],landscape:true}), n:n};
+  }
+  var sheets=[];
+  var cur=tableSheet(state.rows,false,true);
+  sheets.push({name:"Plan set table", xml:cur.xml});
+  var h=state.header, cm=h.cm||blankCM(), s=stats(), holds=state.rows.filter(function(r){return r.status==="hold";});
+  var yn=function(v){return v==="yes"?"Yes":v==="no"?"No":"Not answered";};
+  var jobRows=[
+    {cells:["Delta Level 2 plan-set table"],style:4},{cells:[]},
+    {cells:["From lead intake"],style:5},
+    ["Job name",t(h.job)],["Entity",h.entity],["Job type",h.kind==="damage"?"Damage":"Non-damage"],
+    {cells:[]},{cells:["Capture method (vetter)"],style:5},
+    ["Vetter",t(cm.vetter)],
+    ["Check 1: size or complexity beyond a simple room",yn(cm.c1)],
+    ["Size / complexity threshold used",t(cm.threshold)||"Not set"],
+    ["Check 2: dimensions can't be captured reliably by hand",yn(cm.c2)],
+    ["Check 3: spatial record needed beyond the site visit",yn(cm.c3)],
+    ["Suggested capture method",cmSuggest(cm)||"Not answered"],
+    ["Capture method used",(cmMethod(cm)||"Not chosen")+(cmIsOverride(cm)?" (vetter override)":"")],
+    ["Override reason",t(cm.overrideReason)],
+    ["Matterport operator",t(cm.operator)],
+    ["Matterport task scheduled",cm.mpDate||""],
+    ["Underlay ready",fmtLocal(cm.underlay)],
+    ["Scope start",fmtLocal(cm.scopeStart)],
+    ["24-hour scope-start target",cm24(cm).label],
+    ["Miss reason",t(cm.missReason)],
+    ["Inspector checklist","From the app: to build (not in this version). Reference standard for the visual: Jason's existing JobTread callout visual."],
+    {cells:[]},{cells:["Inspector"],style:5},
+    ["Inspector",t(h.inspector)],
+    ["Inspection date (target)",h.idateT||""],["Inspection date (actual)",h.idateA||""],
+    ["Scope date (target)",h.sdateT||""],["Scope date (actual)",h.sdateA],
+    ["Inspection report ref",t(h.insp)||(h.kind==="damage"?"":"n/a (non-damage)")],["Inspection report version",t(h.insp)?t(h.inspVer):""],
+    ["Damage source(s)",(h.sources||[]).filter(function(x){return t(x.text);}).map(function(x){return t(x.text)+(x.conf?" ("+x.conf+")":"");}).join("; ")||(h.kind==="damage"?"":"n/a (non-damage)")],
+    ["Sketch / visuals ref",t(h.sketch)||"Not given"],
+    ["Callout coverage","Inspector confirmed every callout on the sketch / plan set has exactly one row"],
+    ["Scope walk notes",t(h.walkNotes)],
+    ["Field notes & stuck flags",(function(){ var en=fnEntries(), st=en.filter(function(x){return x.stuck;}).length; return st+" stuck flag"+(st===1?"":"s")+", "+en.length+" field note"+(en.length===1?"":"s")+" total. See the Field notes & flags sheet."; })()],
+    {cells:[]},
+    ["Table version",verLabel(state.version)],
+    ["Check complete","Passed "+fmtStamp(new Date(state.passedAt))],
+    ["Rows",s.rows],["known",s.known],["assumed",s.assumed],["hold (flagged)",s.hold],
+    ["Holds",holds.map(function(r){return normIds(r.callout)+" "+r.trade+(t(r.note)?" ("+t(r.note)+")":"");}).join("; ")||"None"],
+    ["Cost Groups used",Object.keys(s.trades).map(function(k){return k+" ("+s.trades[k]+")";}).join(", ")]
+  ];
+  if(state.prior.length){ var b=state.prior[0]; jobRows.push(["Benchmark","v1, checked "+(b.passedAt?fmtStamp(new Date(b.passedAt)):"")+". Read-only on the Benchmark v1 sheet."]); }
+  if(state.prior.length>1){ var pvj=state.prior[state.prior.length-1]; jobRows.push(["Previous version","v"+pvj.version+", checked "+(pvj.passedAt?fmtStamp(new Date(pvj.passedAt)):"")+". Read-only on the Version v"+pvj.version+" sheet. Changes listed on the Changes vs v"+pvj.version+" sheet."]); }
+  jobRows=jobRows.concat([{cells:[]},
+    ["Project ID",state.pid],
+    ["Project file","This .xlsx is the project file. Open it in Delta Level 2 Scoping (v1.3 or later) with Open saved project to continue on any device."],
+    ["Landing spot","Not decided yet. File was downloaded to the inspector's device. When decided, it goes there with the annotated visuals."],
+    ["Form","Delta Level 2 Scoping "+VERSION],
+    ["Rule","In damage, the damage defines the scope which defines the price."],
+    ["Benchmark rule","The Level 2 table is the benchmark of the current stated details. Later findings and selections go into new versions, never overwriting it."]
+  ]).map(function(r){return Array.isArray(r)?{cells:r,style:[5,2]}:r;});
+  sheets.push({name:"Job", xml:sheetXml(jobRows,{widths:[26,90]})});
+  if(state.prior.length){
+    var changeSheet=function(base, baseLabel){
+      var c=computeChanges(base, state.rows), crow=[{cells:["Change","Callout ID(s)","Trade / code","Field",baseLabel,"v"+state.version],style:1}];
+      c.added.forEach(function(r){ crow.push({cells:["Added",normIds(r.callout),r.trade,"(new row)","",[r.action,t(r.material),t(r.location),t(r.qty)+" "+(r.unit||""),r.status].join(" · ")],style:2}); });
+      c.changed.forEach(function(x){ x.diffs.forEach(function(d){ crow.push({cells:["Changed",normIds(x.row.callout),x.row.trade,d.f,d.old,d.nw],style:2}); }); });
+      c.removed.forEach(function(r){ crow.push({cells:["Removed",normIds(r.callout),r.trade,"(row removed)",[r.action,t(r.material),t(r.location),t(r.qty)+" "+(r.unit||""),r.status].join(" · "),""],style:2}); });
+      if(crow.length===1) crow.push({cells:["No changes"],style:2});
+      return sheetXml(crow,{widths:[10,14,11,12,40,40],freeze:true});
+    };
+    if(state.prior.length>1){ var pvs=state.prior[state.prior.length-1]; sheets.push({name:"Changes vs v"+pvs.version, xml:changeSheet(pvs.rows, "v"+pvs.version)}); }
+    sheets.push({name:"Changes vs v1", xml:changeSheet(state.prior[0].rows, "Benchmark v1")});
+    state.prior.forEach(function(p){ sheets.push({name:p.version===1?"Benchmark v1":"Version v"+p.version, xml:tableSheet(p.rows,true,false).xml}); });
+  }
+  var fe=fnEntries(), fnRows=[{cells:FN_COLS,style:1}].concat(fe.map(function(x){ return {cells:fnCells(x),style:x.stuck?3:2}; }));
+  if(fe.length===0) fnRows.push({cells:["No field notes or stuck flags."],style:2});
+  sheets.push({name:"Field notes & flags", xml:sheetXml(fnRows,{widths:[9,12,10,22,22,30,50,18],freeze:true})});
+  var howRows=[
+    {cells:["How to read this table"],style:4},{cells:[]},
+    {cells:["One row per Cost Group + Action + Material. Callout IDs point to the annotated sketch / plan set named on the Job tab."],style:2},
+    {cells:["Status: known = treat as fact. assumed = filled so work can continue; the note says what was assumed. hold = can't honestly fill yet; stays unpriced, the rest of the job doesn't wait."],style:2},
+    {cells:["The Level 2 table is the benchmark (v1). Later findings and selections go into a new version (v2, v3…); earlier versions stay read-only in this file."],style:2},
+    {cells:["No prices here. Xactimate lines hang under these rows later and never create a new trade."],style:2},
+    {cells:["CAB, CLN, DRY, PNT and the other codes are Delta's Cost Group codes, not Xactimate categories."],style:2},
+    {cells:["What versus what it takes: Every prompt and preset asks for what something is (the material, the action, the quantity of the thing), not what it takes (labor hours, time, cost). That keeps scope from drifting into estimating."],style:2},
+    {cells:["Finish = the like-kind baseline: the existing quality, described so a sub could bid it without seeing it (material, color, style, how it's built). No grade words on their own."],style:2},
+    {cells:["Selection = the client's choice, kept apart from the baseline. \"Selection pending client\" means the baseline is known and the client hasn't chosen yet. When they choose, the choice goes into a new version as an upgrade or downgrade from the Finish baseline."],style:2},
+    {cells:[]},{cells:["Actions"],style:5}
+  ].concat(ACTIONS.map(function(a){return {cells:[a+": "+ACTION_HINT[a]],style:2};}));
+  sheets.push({name:"How to read", xml:sheetXml(howRows,{widths:[110]})});
+  // hidden sheet: the exact project (all versions, row ids) so Open saved project restores it exactly
+  var payload=JSON.stringify({format:1, form:VERSION, pid:state.pid, exportedAt:new Date().toISOString(),
+    state:{v:3, pid:state.pid, createdAt:state.createdAt, header:h, rows:snapshotRows(state.rows), prior:state.prior, version:state.version, passedAt:state.passedAt, seq:state.seq, attest:state.attest, fnotes:state.fnotes||{}}});
+  var drows=[{cells:[DATA_MARK,"1","Used by Open saved project. Don't edit."]}];
+  for(var pi=0;pi<payload.length;pi+=30000) drows.push({cells:[payload.slice(pi,pi+30000)]});
+  sheets.push({name:DATA_SHEET, xml:sheetXml(drows,{widths:[60]}), hidden:true});
+  var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+    sheets.map(function(x,i){return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';}).join("")+
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+  var wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets>'+
+    sheets.map(function(x,i){return '<sheet name="'+xesc(x.name)+'" sheetId="'+(i+1)+'"'+(x.hidden?' state="hidden"':'')+' r:id="rId'+(i+1)+'"/>';}).join("")+
+    '</sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'Plan set table\'!$A$1:$L$'+cur.n+'</definedName></definedNames></workbook>';
+  var rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    sheets.map(function(x,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>';}).join("")+
+    '<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  var files=[
+    {name:"[Content_Types].xml",data:ct},
+    {name:"_rels/.rels",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>'},
+    {name:"docProps/core.xml",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'+xesc(t(h.job)+" Level 2 plan-set table v"+state.version)+'</dc:title><dc:creator>'+xesc(t(h.inspector))+'</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">'+new Date().toISOString().replace(/\.\d+Z$/,"Z")+'</dcterms:created></cp:coreProperties>'},
+    {name:"docProps/app.xml",data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Delta Level 2 Scoping '+VERSION+'</Application></Properties>'},
+    {name:"xl/workbook.xml",data:wb},
+    {name:"xl/_rels/workbook.xml.rels",data:rels},
+    {name:"xl/styles.xml",data:styles}
+  ].concat(sheets.map(function(x,i){return {name:"xl/worksheets/sheet"+(i+1)+".xml",data:x.xml};}));
+  return zip(files);
+}
+
+// ---------- projects on this device ----------
+function projMsg(h){ $("proj-msg").innerHTML=h; }
+function fmtShort(iso){ var d=new Date(iso); if(isNaN(d)) return ""; return (d.getMonth()+1)+"/"+d.getDate()+" "+fmtTime(d); }
+function isEmptyProject(s){
+  var h=s.header, cm=h.cm||{};
+  if(s.fnotes && Object.keys(s.fnotes).length) return false;
+  return !t(h.job) && !h.entity && !h.kind && !t(h.inspector) && !t(h.insp) && !t(h.sketch) && !t(h.walkNotes) && !(h.sources||[]).some(function(x){return t(x.text)||x.conf;}) &&
+    !s.rows.length && !s.prior.length && !Object.keys(cm).some(function(k){return t(cm[k]);});
+}
+function dropProject(pid){ lsDel(K_P+pid); writeIndex(readIndex().filter(function(x){return x.pid!==pid;})); }
+function renderPicker(){
+  var sel=$("proj-select"); if(!sel) return;
+  var idx=readIndex(); if(!idx.some(function(x){return x.pid===state.pid;})) idx.push({pid:state.pid,job:t(state.header.job),version:state.version,savedAt:state.savedAt||""});
+  idx.sort(byRecent);
+  sel.innerHTML=idx.map(function(x){ var cur=x.pid===state.pid, j=cur?t(state.header.job):x.job, v=cur?state.version:x.version;
+    return '<option value="'+esc(x.pid)+'"'+(cur?' selected':'')+'>'+esc((t(j)||"Untitled project")+" · "+verLabel(v||1)+(x.savedAt?" · saved "+fmtShort(x.savedAt):""))+'</option>'; }).join("");
+  $("proj-count").textContent=idx.length+" project"+(idx.length===1?"":"s")+" on this device";
+}
+function loadIntoUI(){
+  lastResultHash=null;
+  if(!state.walk) state.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"};
+  renderHeader(); attachMics(document); $("result").innerHTML=""; renderPrior(); renderLanding();
+  setTab(state.tab==="table"?"table":"walk");
+  if(canExport()) renderResult({pass:true,problems:[]}); else if(state.checked) renderResult(null);
+  updateExportButtons(); renderPicker();
+  window.scrollTo(0,0);
+}
+function switchProject(pid){
+  if(pid===state.pid) return;
+  flushSave(); if(isEmptyProject(state)) dropProject(state.pid);
+  var s=loadProject(pid); if(!s){ projMsg('<span class="msg">That project couldn\'t be loaded.</span>'); renderPicker(); return; }
+  state=s; lsSet(K_CUR,pid); loadIntoUI();
+  projMsg("Opened <b>"+esc(t(state.header.job)||"Untitled project")+"</b> ("+verLabel(state.version)+").");
+}
+function clearForm(){
+  if(!confirm("Clear this form? Everything typed in this project is erased"+(STORAGE_OK?" from this device":"")+". Export first if you need it.")) return;
+  clearTimeout(saveTimer); var pid=state.pid; state=blankState(); state.pid=pid; save(); loadIntoUI();
+  projMsg("Form cleared. Start filling it in.");
+}
+function newProject(){
+  if(!STORAGE_OK){ if(isEmptyProject(state)){ projMsg("This project is already blank. Start filling it in."); return; }
+    if(!confirm("This browser can't save, so starting a new project erases what's on screen. Export first if you need it. Start new?")) return;
+    state=blankState(); loadIntoUI(); projMsg("New blank project started."); return; }
+  flushSave();
+  if(isEmptyProject(state)){ projMsg("This project is already blank. Start filling it in."); return; }
+  state=blankState(); save(); loadIntoUI();
+  projMsg("New blank project started. Your other projects are still saved on this device (Project list above).");
+}
+function removeProject(){
+  var name=t(state.header.job)||"Untitled project";
+  if(!confirm('Remove "'+name+'" ('+verLabel(state.version)+' and all its earlier versions) from this device? Other projects stay. Export it first if you need the file.')) return;
+  clearTimeout(saveTimer); dropProject(state.pid);
+  var idx=readIndex().sort(byRecent), s=null; for(var i=0;i<idx.length && !s;i++) s=loadProject(idx[i].pid);
+  state = s || blankState(); lsSet(K_CUR,state.pid); save(); loadIntoUI();
+  projMsg('Removed "'+esc(name)+'" from this device.');
+}
+// ---------- send the project file ----------
+function shareProject(){
+  if(!canExport()){ alert("Run Check complete first. The project file can be sent once this version passes."); return; }
+  var name=fileBase()+".xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data=buildXlsx();
+  try{
+    var f=new File([data], name, {type:mime});
+    if(navigator.canShare && navigator.share && navigator.canShare({files:[f]})){
+      navigator.share({files:[f], title:name, text:"Level 2 project file. Open it in Delta Level 2 Scoping with Open saved project."}).catch(function(){});
+      projMsg("Pick who to send <b>"+esc(name)+"</b> to. They open it with <b>Open saved project</b>."); return;
+    }
+  }catch(e){}
+  download(name, mime, data);
+  projMsg("Project file downloaded: <b>"+esc(name)+"</b>. Send it to whoever is assigned (email, text, shared folder). They open it with <b>Open saved project</b> and continue from "+verLabel(state.version)+".");
+}
+// ---------- open a saved project (.xlsx exported by this form) ----------
+function unzipEntries(buf){
+  var dv=new DataView(buf), u8=new Uint8Array(buf), eocd=-1;
+  for(var i=u8.length-22;i>=Math.max(0,u8.length-65557);i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) throw new Error("not an .xlsx file");
+  var n=dv.getUint16(eocd+10,true), off=dv.getUint32(eocd+16,true), out={}, dec=new TextDecoder();
+  for(var k=0;k<n;k++){
+    if(dv.getUint32(off,true)!==0x02014b50) throw new Error("the file looks damaged");
+    var method=dv.getUint16(off+10,true), csize=dv.getUint32(off+20,true), nlen=dv.getUint16(off+28,true), elen=dv.getUint16(off+30,true), clen=dv.getUint16(off+32,true), lho=dv.getUint32(off+42,true);
+    var name=dec.decode(u8.subarray(off+46,off+46+nlen)), start=lho+30+dv.getUint16(lho+26,true)+dv.getUint16(lho+28,true);
+    out[name]={method:method, data:u8.subarray(start,start+csize)};
+    off+=46+nlen+elen+clen;
+  }
+  return out;
+}
+function inflate(e){
+  if(e.method===0) return Promise.resolve(e.data);
+  if(e.method===8){
+    if(typeof DecompressionStream==="undefined") return Promise.reject(new Error("this browser can't read compressed .xlsx files; use an up-to-date Chrome, Edge or Safari"));
+    return new Response(new Blob([e.data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer().then(function(b){ return new Uint8Array(b); });
+  }
+  return Promise.reject(new Error("unsupported compression in the file"));
+}
+function xtags(node,name){ return Array.prototype.slice.call(node.getElementsByTagNameNS("*",name)); }
+function colIdx(ref){ var m=/^([A-Z]+)/.exec(ref||""); if(!m) return -1; var n=0; for(var i=0;i<m[1].length;i++) n=n*26+(m[1].charCodeAt(i)-64); return n-1; }
+function sheetRows(doc, sst){
+  var rows=[];
+  xtags(doc,"row").forEach(function(rw,ri){
+    var r=parseInt(rw.getAttribute("r"),10); r=isNaN(r)?ri:r-1; var cells=[];
+    xtags(rw,"c").forEach(function(c,ci){
+      var col=colIdx(c.getAttribute("r")); if(col<0) col=ci;
+      var tp=c.getAttribute("t"), v=xtags(c,"v")[0], val=null;
+      if(tp==="inlineStr") val=xtags(c,"t").map(function(x){return x.textContent;}).join("");
+      else if(tp==="s") val=v?sst[parseInt(v.textContent,10)]:null;
+      else if(tp==="str"||tp==="e") val=v?v.textContent:null;
+      else if(tp==="b") val=v?v.textContent==="1":null;
+      else if(v && v.textContent!==""){ var num=parseFloat(v.textContent); val=isNaN(num)?v.textContent:num; }
+      cells[col]=val;
+    });
+    rows[r]=cells;
+  });
+  for(var i=0;i<rows.length;i++) if(!rows[i]) rows[i]=[];
+  return rows;
+}
+function readXlsx(buf){
+  var z=unzipEntries(buf), dec=new TextDecoder("utf-8"), P=new DOMParser();
+  function text(name){ var e=z[name]; return e ? inflate(e).then(function(u){ return dec.decode(u); }) : Promise.resolve(null); }
+  function xml(s){ return P.parseFromString(s,"application/xml"); }
+  return Promise.all([text("xl/workbook.xml"),text("xl/_rels/workbook.xml.rels"),text("xl/sharedStrings.xml")]).then(function(a){
+    if(!a[0]||!a[1]) throw new Error("not an .xlsx file");
+    var rel={}; xtags(xml(a[1]),"Relationship").forEach(function(r){ rel[r.getAttribute("Id")]=r.getAttribute("Target"); });
+    var sst=[]; if(a[2]) xtags(xml(a[2]),"si").forEach(function(si){ sst.push(xtags(si,"t").filter(function(x){ return !(x.parentNode && x.parentNode.localName==="rPh"); }).map(function(x){return x.textContent;}).join("")); });
+    var list=xtags(xml(a[0]),"sheet").map(function(s){
+      var rid=s.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id")||s.getAttribute("r:id"), tg=rel[rid]||"";
+      return {name:s.getAttribute("name"), state:s.getAttribute("state")||"visible", path: tg.charAt(0)==="/" ? tg.slice(1) : "xl/"+tg.replace(/^\.\//,"")};
+    });
+    return Promise.all(list.map(function(s){ return text(s.path).then(function(x){ s.rows = x ? sheetRows(xml(x), sst) : []; return s; }); }));
+  }).then(function(list){ var out={order:[],sheets:{}}; list.forEach(function(s){ out.order.push(s.name); out.sheets[s.name]=s; }); return out; });
+}
+function cstr(v){ return v==null ? "" : (typeof v==="number" ? String(v) : String(v)).trim(); }
+function readTableSheet(sh){
+  var hdr=(sh.rows[0]||[]).map(cstr), pos=TABLE_COLS.map(function(c){ return hdr.indexOf(c); });
+  for(var i=0;i<11;i++) if(pos[i]<0) return null;
+  return sh.rows.slice(1).map(function(r){ return pos.map(function(p){ return p<0 ? "" : cstr(r[p]); }); }).filter(function(c){ return c.some(function(x){return x!=="";}); });
+}
+function sameTable(rows, cells){
+  var a=tableRows(rows).map(function(r){ return r.map(cstr); });
+  return a.length===cells.length && a.every(function(r,i){ return r.every(function(v,j){ return v===cells[i][j]; }); });
+}
+function rowsFromCells(cells, touched){
+  var used={};
+  return cells.map(function(c,i){
+    var id="c_"+parseIds(c[0]).map(function(x){return x.toUpperCase();}).join("_"); if(id==="c_") id="c_row"+(i+1);
+    while(used[id]) id+="_"+(i+1); used[id]=1;
+    var o={id:id,callout:c[0],trade:c[1],action:c[3],location:c[4],qty:c[5],unit:c[6],material:c[7],finish:c[8],status:c[9],note:c[10],selection:c[11]||""};
+    if(touched) o.touched=true; return o;
+  });
+}
+function parseStamp(s){ var m=/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(s||"")); return m ? new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).toISOString() : null; }
+function dateCell(v){ if(typeof v==="number"){ var d=new Date(Math.round((v-25569)*864e5)); return d.toISOString().slice(0,10); } return cstr(v); }
+function silentPass(s){
+  var keep=state; state=s;
+  var ok = !!s.attest && s.rows.length>0 && Object.keys(validateHeader()).length===0;
+  if(ok){ var counts=calloutCounts(); ok = s.rows.every(function(r){ return Object.keys(validateRow(r,counts).e).length===0; }); }
+  if(ok){ s.passedHash=contentHash(); s.passedAt=s.passedAt||new Date().toISOString(); } else { s.passedHash=null; s.passedAt=null; }
+  state=keep; return ok;
+}
+function buildFromWorkbook(wb){
+  var tbl=wb.sheets["Plan set table"], job=wb.sheets["Job"];
+  if(!tbl||!job) throw new Error("it isn't a Level 2 plan-set file from this form (no Plan set table and Job sheets)");
+  var vis=readTableSheet(tbl); if(!vis) throw new Error("its Plan set table columns don't match this form");
+  var J={}; job.rows.forEach(function(r){ if(r && r[0]!=null && r[1]!=null && J[cstr(r[0])]==null) J[cstr(r[0])]=r[1]; });
+  var data=wb.sheets[DATA_SHEET], payload=null, s, mode="exact", note="";
+  if(data && data.rows[0] && data.rows[0][0]===DATA_MARK){ try{ payload=JSON.parse(data.rows.slice(1).map(function(r){ return r && r[0]!=null ? String(r[0]) : ""; }).join("")); }catch(e){ payload=null; } }
+  if(payload && payload.state && payload.state.rows && sameTable(payload.state.rows, vis)){
+    s=migrate(JSON.parse(JSON.stringify(payload.state)));
+    s.pid=payload.pid||s.pid; s.rows.forEach(function(r){ r.touched=true; });
+  } else {
+    mode="rebuilt";
+    note = payload ? "The Plan set table was changed outside the form, so the project was rebuilt from the sheets (the table as it is in the file wins)." : "This file has no project data (made by an older form version), so the project was rebuilt from its sheets.";
+    note += " Rows are matched across versions by Callout ID; check times of middle versions may be missing.";
+    s=blankState(); var h=s.header, cm=h.cm;
+    h.job=cstr(J["Job name"]); h.entity=cstr(J["Entity"]); var jt=cstr(J["Job type"]); h.kind = jt==="Damage"?"damage":jt==="Non-damage"?"non-damage":"";
+    h.inspector=cstr(J["Inspector"]); h.idateT=dateCell(J["Inspection date (target)"]); h.idateA=dateCell(J["Inspection date (actual)"]); h.sdateT=dateCell(J["Scope date (target)"]); h.sdateA=dateCell(J["Scope date (actual)"]);
+    var ir=cstr(J["Inspection report ref"]); h.insp = /^n\/a/.test(ir) ? "" : ir; h.inspVer=cstr(J["Inspection report version"])||"v1";
+    var src=cstr(J["Damage source(s)"]); h.sources = (!src || /^n\/a/.test(src)) ? [{text:"",conf:""}] : src.split(/;\s*/).map(function(x){ var m=/^(.*?)\s*\((Confirmed|Unverified)\)$/.exec(x); return m?{text:m[1],conf:m[2]}:{text:x,conf:""}; });
+    var sk=cstr(J["Sketch / visuals ref"]); h.sketch = sk==="Not given" ? "" : sk; h.walkNotes=cstr(J["Scope walk notes"]);
+    var ry=function(v){ v=cstr(v); return v==="Yes"?"yes":v==="No"?"no":""; };
+    cm.vetter=cstr(J["Vetter"]); cm.c1=ry(J["Check 1: size or complexity beyond a simple room"]); cm.c2=ry(J["Check 2: dimensions can't be captured reliably by hand"]); cm.c3=ry(J["Check 3: spatial record needed beyond the site visit"]);
+    var th=cstr(J["Size / complexity threshold used"]); cm.threshold = th==="Not set" ? "" : th;
+    var mu=cstr(J["Capture method used"]); if(/\(vetter override\)$/.test(mu)) cm.override=mu.replace(/\s*\(vetter override\)$/,"");
+    cm.overrideReason=cstr(J["Override reason"]); cm.operator=cstr(J["Matterport operator"]); cm.mpDate=dateCell(J["Matterport task scheduled"]);
+    cm.underlay=cstr(J["Underlay ready"]).replace(" ","T"); cm.scopeStart=cstr(J["Scope start"]).replace(" ","T"); cm.missReason=cstr(J["Miss reason"]);
+    s.rows=rowsFromCells(vis,true);
+    var pri=wb.order.map(function(n){ var m=/^(?:Benchmark v(1)|Version v(\d+))$/.exec(n); return m?{n:n,v:parseInt(m[1]||m[2],10)}:null; }).filter(Boolean).sort(function(a,b){return a.v-b.v;});
+    var pvLine=cstr(J["Previous version"]), pvM=/^v(\d+), checked (.*)$/.exec(pvLine);
+    s.prior=pri.map(function(p){ var cells=readTableSheet(wb.sheets[p.n])||[];
+      var at = p.v===1 ? parseStamp(J["Benchmark"]) : (pvM && +pvM[1]===p.v ? parseStamp(pvM[2]) : null);
+      return {version:p.v, header:{}, rows:rowsFromCells(cells,false), passedAt:at}; });
+    var tv=/v(\d+)/.exec(cstr(J["Table version"])); s.version = tv ? parseInt(tv[1],10) : (s.prior.length ? s.prior[s.prior.length-1].version+1 : 1);
+    s.passedAt=parseStamp(J["Check complete"]); s.attest=true; s.seq=s.rows.length;
+    var pidCell=cstr(J["Project ID"]); if(pidCell) s.pid=pidCell;
+  }
+  s.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"}; s.tab="table"; s.checked=false;
+  var passed=silentPass(s);
+  return {state:s, mode:mode, note:note, passed:passed};
+}
+function openProjectFile(file){
+  if(!file) return;
+  projMsg("Opening "+esc(file.name)+"…");
+  file.arrayBuffer().then(readXlsx).then(function(wb){
+    var res=buildFromWorkbook(wb), s=res.state;
+    var existing=readIndex().filter(function(x){return x.pid===s.pid;})[0];
+    if(existing && !confirm('This project ("'+(existing.job||"Untitled project")+'", '+verLabel(existing.version||1)+') is already on this device. Replace the device copy with the file ('+verLabel(s.version)+')?\n\nCancel keeps the device copy and does not open the file.')){ projMsg("Not opened. The device copy was kept."); return; }
+    flushSave(); if(isEmptyProject(state) && state.pid!==s.pid) dropProject(state.pid);
+    state=s; save(); loadIntoUI();
+    var pv=s.prior.map(function(p){return p.version===1?"Benchmark v1":"v"+p.version;}).join(" + ");
+    projMsg('<b>Opened '+esc(file.name)+'</b>: '+esc(t(s.header.job)||"Untitled project")+', '+verLabel(s.version)+(pv?' (earlier: '+esc(pv)+')':'')+'. '+
+      (res.passed ? 'Check complete passed; press <b>Start revision (v'+(s.version+1)+')</b> to record later findings.' : '<span class="msg">As opened it does not pass Check complete. Run Check complete to see what to fix.</span>')+
+      (res.mode==="rebuilt" ? '<div class="cmwarn" id="proj-warn">'+esc(res.note)+'</div>' : ''));
+  }).catch(function(e){ projMsg('<span class="msg" id="proj-err">Couldn\'t open '+esc(file.name)+': '+esc(e && e.message || e)+'.</span>'); });
+}
+function bindProject(){
+  $("proj-select").addEventListener("change",function(){ switchProject(this.value); });
+  $("btn-proj-new").addEventListener("click",newProject);
+  $("file-open").addEventListener("change",function(){ var f=this.files&&this.files[0]; this.value=""; openProjectFile(f); });
+  $("btn-share").addEventListener("click",shareProject);
+}
+
+// ---------- v1.5: field notes + stuck flags ----------
+// One optional note (typed or spoken) and one "Stuck" flag per input. Kept in state.fnotes, keyed:
+//   h:<element id> for Job fields, h:trades, h:walkNotes; r:<row id>:<field> for scope rows (same key in Walk and Table).
+// Notes don't count as table content, so adding one never re-locks a passed Check complete.
+var HNOTE=[["h-job","Job name"],["h-entity","Entity"],["h-kind","Job type"],["cm-vetter","Vetter"],["cm-c1","Capture check 1 (size/complexity)"],["cm-threshold","Size/complexity threshold"],["cm-c2","Capture check 2 (dimensions)"],["cm-c3","Capture check 3 (spatial record)"],["cm-override","Capture method used"],["cm-reason","Override reason"],["cm-operator","Matterport operator"],["cm-mpdate","Matterport task scheduled"],["cm-underlay","Underlay ready"],["cm-scopestart","Scope start"],["cm-miss","Miss reason"],["h-inspector","Inspector"],["h-idate-t","Inspection date"],["h-sdate-t","Scope date"],["h-insp","Inspection report ref"],["h-sources","Damage source(s)"],["h-sketch","Sketch / visuals ref"],["attest","Callout coverage confirmation"]];
+var HLABEL={"h:trades":"Trades that apply / walk order","h:walkNotes":"Scope walk notes"}; HNOTE.forEach(function(x){ HLABEL["h:"+x[0]]=x[1]; });
+var HVAL={"h-job":"job","h-entity":"entity","h-kind":"kind","h-inspector":"inspector","h-insp":"insp","h-sketch":"sketch"};
+var RLABEL={callout:"Callout ID(s)",trade:"Trade",action:"Action",material:"Material",location:"Location",qty:"Qty",unit:"Unit",finish:"Finish",status:"Status",note:"Note",selection:"Selection"};
+var FN_COLS=["Flag","Section","Trade","Line","Field","Value entered","Note","Updated"];
+function fnGet(k){ return (state.fnotes && state.fnotes[k]) || {note:"",stuck:false}; }
+function fnSet(k,patch){
+  if(!state.fnotes) state.fnotes={};
+  var o=state.fnotes[k]||{note:"",stuck:false}, n={note:o.note||"",stuck:!!o.stuck,at:new Date().toISOString()};
+  Object.keys(patch).forEach(function(x){ n[x]=patch[x]; });
+  if(!t(n.note) && !n.stuck) delete state.fnotes[k]; else state.fnotes[k]=n;
+  clearTimeout(saveTimer); saveTimer=setTimeout(save,250); renderFlags();
+}
+function fnPrune(rowId){ if(!rowId||!state.fnotes) return; var pre="r:"+rowId+":"; Object.keys(state.fnotes).forEach(function(k){ if(k.indexOf(pre)===0) delete state.fnotes[k]; }); }
+function noteUI(k){
+  var n=fnGet(k), has=!!t(n.note);
+  return '<div class="fn" data-fnk="'+esc(k)+'"><button type="button" data-fnbtn class="'+(has?'has':'')+'" title="Add an optional note (type or speak)">'+(has?'📝 Note ✓':'📝 Note')+'</button>'+
+    '<button type="button" data-fnstuck class="stuck'+(n.stuck?' on':'')+'" aria-pressed="'+(n.stuck?'true':'false')+'" title="Flag this field: I got stuck or confused here">'+(n.stuck?'⚑ Stuck':'⚑ Stuck?')+'</button>'+
+    '<div class="fnbox"'+(has||n.stuck?'':' hidden')+'><textarea data-fnote rows="2" aria-label="Note for '+esc(fnLabel(k))+'" placeholder="Optional: the info, or what\'s unclear or blocking you here">'+esc(n.note)+'</textarea><button type="button" data-fnmic title="Speak the note" aria-label="Speak the note">🎤</button></div><div class="fnmsg" hidden></div></div>';
+}
+function fnLabel(k){ if(k.indexOf("h:")===0) return HLABEL[k]||k.slice(2); var f=k.slice(k.lastIndexOf(":")+1); return RLABEL[f]||f; }
+function renderHeaderNotes(){
+  document.querySelectorAll('[data-hn]').forEach(function(x){ x.remove(); });
+  HNOTE.forEach(function(x){
+    var el=$(x[0]); if(!el) return; var html=noteUI("h:"+x[0]).replace('<div class="fn"','<div class="fn" data-hn="1"');
+    if(x[0]==="attest") $("attest-wrap").insertAdjacentHTML("afterend", html);
+    else if(el.classList.contains("seg") || x[0]==="cm-threshold") el.insertAdjacentHTML("afterend", html);
+    else { var host=el.closest(".f")||el.parentNode; host.insertAdjacentHTML("beforeend", html); }
+  });
+}
+function fnEntries(){
+  var out=[], fn=state.fnotes||{}, order={};
+  HNOTE.forEach(function(x,i){ order["h:"+x[0]]=i; }); order["h:trades"]=90; order["h:walkNotes"]=91;
+  Object.keys(fn).forEach(function(k){
+    var n=fn[k]; if(!n || (!t(n.note) && !n.stuck)) return;
+    var e={key:k, stuck:!!n.stuck, note:t(n.note), at:n.at||""};
+    if(k.indexOf("h:")===0){
+      var id=k.slice(2); e.section="Job"; e.trade=""; e.line=""; e.field=HLABEL[k]||id; e.sort=[0,order[k]!=null?order[k]:99,0];
+      if(id==="trades"){ e.section="Scope walk"; e.value=W().trades.join(", "); }
+      else if(id==="walkNotes"){ e.section="Scope walk"; e.value=t(state.header.walkNotes); }
+      else if(HVAL[id]) e.value=t(state.header[HVAL[id]]);
+      else if(id==="h-sources") e.value=(state.header.sources||[]).map(function(x){return t(x.text)+(x.conf?" ("+x.conf+")":"");}).filter(function(x){return t(x);}).join("; ");
+      else if(id==="attest") e.value=state.attest?"Confirmed":"Not confirmed";
+      else if(id==="h-idate-t") e.value=[state.header.idateT,state.header.idateA].filter(Boolean).join(" / ");
+      else if(id==="h-sdate-t") e.value=[state.header.sdateT,state.header.sdateA].filter(Boolean).join(" / ");
+      else { var cmk=CMMAP[id]; if(cmk) e.value=t(state.header.cm[cmk]); else if(/^cm-c[123]$/.test(id)) e.value=state.header.cm["c"+id.slice(4)]||""; else e.value=""; }
+    } else {
+      var rest=k.slice(2), ci=rest.lastIndexOf(":"), rid=rest.slice(0,ci), f=rest.slice(ci+1), ri=-1;
+      for(var i=0;i<state.rows.length;i++) if(state.rows[i].id===rid){ ri=i; break; }
+      if(ri<0) return; var r=state.rows[ri];
+      e.section="Scope row"; e.trade=r.trade||""; e.line="Row "+(ri+1)+(t(r.callout)?" ("+normIds(r.callout)+")":"");
+      e.field=(f==="material" && r.trade==="GC") ? "Item (GC)" : (RLABEL[f]||f); e.value=t(r[f]); e.sort=[1,ri,FIELDS.indexOf(f)];
+    }
+    out.push(e);
+  });
+  out.sort(function(a,b){ for(var i=0;i<3;i++){ if(a.sort[i]!==b.sort[i]) return a.sort[i]-b.sort[i]; } return 0; });
+  return out;
+}
+function fnCells(x){ return [x.stuck?"STUCK":"note", x.section, x.trade, x.line, x.field, x.value, x.note, x.at?fmtStamp(new Date(x.at)):""]; }
+function fnFiltered(){ var en=fnEntries(), only=$("flags-only")&&$("flags-only").checked; return only?en.filter(function(x){return x.stuck;}):en; }
+function renderFlags(){
+  var box=$("flag-list"); if(!box) return;
+  var all=fnEntries(), en=fnFiltered(), st=all.filter(function(x){return x.stuck;}).length;
+  $("flag-count").textContent=st+" stuck · "+all.length+" total";
+  box.innerHTML = en.length ? '<div class="tblwrap"><table class="pv" id="flag-table"><thead><tr>'+FN_COLS.map(function(c){return '<th>'+esc(c)+'</th>';}).join("")+'</tr></thead><tbody>'+
+    en.map(function(x){ return '<tr class="'+(x.stuck?'stuckrow':'')+'">'+fnCells(x).map(function(c){return '<td>'+esc(c)+'</td>';}).join("")+'</tr>'; }).join("")+'</tbody></table></div>'
+    : '<div class="empty">No field notes or stuck flags yet. Tap 📝 Note or ⚑ Stuck? under any field.</div>';
+}
+function fnText(){
+  var en=fnFiltered(); if(!en.length) return "No field notes or stuck flags.";
+  return "Field notes & stuck flags: "+(t(state.header.job)||"Untitled project")+" ("+verLabel(state.version)+")\n"+en.map(function(x){
+    return (x.stuck?"[STUCK] ":"[note] ")+[x.section,x.trade,x.line].filter(Boolean).join(" · ")+" · "+x.field+(x.value?' (entered: "'+x.value+'")':' (blank)')+(x.note?" — "+x.note:""); }).join("\n");
+}
+function fnCopy(){
+  var txt=fnText(), done=function(ok){ $("flag-msg").innerHTML = ok ? '<b style="color:var(--ok)">Copied '+fnFiltered().length+' item(s). Paste into a text, email or chat.</b>' : '<span class="msg">Couldn\'t copy here. Use Download instead.</span>'; };
+  function fallback(){ try{ var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); var ok=document.execCommand("copy"); ta.remove(); done(ok); }catch(e){ done(false); } }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function(){done(true);},fallback); else fallback();
+  window.__L2_lastCopy=txt;
+}
+function fnCSV(){
+  var lines=[FN_COLS].concat(fnFiltered().map(fnCells)).map(function(row){return row.map(function(c){var s=String(c==null?"":c); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");});
+  var name=fileBase()+"_FieldNotes.csv"; download(name,"text/csv;charset=utf-8","\ufeff"+lines.join("\r\n")+"\r\n");
+  $("flag-msg").innerHTML='<b style="color:var(--ok)">Downloaded '+esc(name)+'.</b>';
+}
+function ruleHint(trade, f){
+  var dmg=state.header.kind==="damage";
+  if(f==="material"){
+    if(trade==="GC") return "Item = what it is, not what it takes: e.g. Supervision, Dumpster 20 yd, Portable toilet, Building permit, Floor protection. No hours or cost here.";
+    if(trade==="PLUMB"||trade==="MECH"||trade==="ELEC") return "Material = the system or fixture class, not every part: e.g. PEX supply system, counted by fixtures in the wet areas.";
+    return "What it is, not what it takes. New line only when the Action or Material changes, not the room.";
+  }
+  if(f==="location"){
+    if(trade==="PLUMB") return "List the wet areas, e.g. Kitchen, Hall bath, Primary bath, Laundry.";
+    return "Same material + same action in several rooms = one line: list the rooms (Kitchen, Hall, Living) and give one combined Qty.";
+  }
+  if(f==="qty"){
+    if(trade==="PLUMB") return "Qty = fixture count (EA), e.g. 12 fixtures.";
+    if(trade==="TRIM"||trade==="DEMO") return "Partial baseboard + all quarter round = two lines (different qty). Both pulled everywhere = one line.";
+    return "Same material, different quantities = split into two lines. Same quantity everywhere = combine.";
+  }
+  if(f==="action"){
+    if(trade==="PNT") return "Paint action = replace (a new coat with materials).";
+    if(trade==="GC") return "GC items usually use n/a.";
+    return "";
+  }
+  if(f==="finish"){
+    if(trade==="GC") return "\"None\" is fine for most GC items.";
+    return dmg ? "Damage job: state the existing material as the like-kind baseline, e.g. \"Existing 12 mm laminate plank, mid-oak\"." : "Describe it so a sub could bid it: material, color, style, how it's built.";
+  }
+  return "";
+}
+function bindNotes(){
+  document.addEventListener("click",function(e){
+    var b=e.target.closest && e.target.closest(".fn button"); if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var wrap=b.closest(".fn"), k=wrap.getAttribute("data-fnk"), boxEl=wrap.querySelector(".fnbox"), ta=wrap.querySelector("textarea"), msg=wrap.querySelector(".fnmsg");
+    if(b.hasAttribute("data-fnbtn")){ boxEl.hidden=!boxEl.hidden; if(!boxEl.hidden) try{ ta.focus({preventScroll:true}); }catch(x){} }
+    else if(b.hasAttribute("data-fnstuck")){ var on=!fnGet(k).stuck; fnSet(k,{stuck:on}); b.classList.toggle("on",on); b.textContent=on?"⚑ Stuck":"⚑ Stuck?"; b.setAttribute("aria-pressed",on?"true":"false"); if(on){ boxEl.hidden=false; } }
+    else if(b.hasAttribute("data-fnmic")){
+      if(SR) listen(ta,b);
+      else { msg.hidden=false; msg.textContent="Voice typing isn't available in this browser (it works in Chrome or Edge with mic permission). Type the note, or use the mic key on your phone keyboard."; try{ ta.focus(); }catch(x){} }
+    }
+  }, true);
+  document.addEventListener("input",function(e){
+    var ta=e.target; if(!ta.hasAttribute || !ta.hasAttribute("data-fnote")) return;
+    var wrap=ta.closest(".fn"), k=wrap.getAttribute("data-fnk"); fnSet(k,{note:ta.value});
+    var nb=wrap.querySelector("[data-fnbtn]"), has=!!t(ta.value); nb.classList.toggle("has",has); nb.textContent=has?"📝 Note ✓":"📝 Note";
+  }, true);
+  $("btn-flags-copy").addEventListener("click",fnCopy);
+  $("btn-flags-csv").addEventListener("click",fnCSV);
+  $("flags-only").addEventListener("change",renderFlags);
+  $("insp-build").addEventListener("click",function(e){ e.preventDefault(); buildInspName(); });
+}
+
+// ---------- dictation (Web Speech API, optional) ----------
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+var activeRec=null;
+function attachMics(root){
+  if(!SR) return;
+  (root||document).querySelectorAll("[data-mic]").forEach(function(el){
+    if(el.__mic) return; el.__mic=true;
+    var b=document.createElement("button"); b.type="button"; b.className="mic"; b.textContent="🎤"; b.title="Speak into this box"; b.setAttribute("aria-label","Speak into this box");
+    b.addEventListener("click",function(e){ e.preventDefault(); listen(el,b); });
+    var host = el.closest(".f") ? el.closest(".f").querySelector(".l") : null;
+    if(el.id==="w-in") host=$("w-q");
+    if(host) host.appendChild(b); else el.insertAdjacentElement("afterend", b);
+  });
+}
+function listen(el,b){
+  if(activeRec){ try{activeRec.stop();}catch(e){} activeRec=null; }
+  var rec; try{ rec=new SR(); }catch(e){ b.style.display="none"; return; }
+  rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=1;
+  b.classList.add("on"); b.textContent="● Listening";
+  rec.onresult=function(ev){
+    var txt=ev.results[0][0].transcript||"";
+    if(el.hasAttribute("data-num")){ var p=spokenQty(txt); if(p){ txt=String(p.num); var row=el.closest(".row"); if(p.unit){ if(el.id==="w-in"){ var r=walkRow(); if(r && !r.unit) r.unit=p.unit; } else if(row){ var r2=state.rows[+row.getAttribute("data-i")]; if(r2 && !r2.unit){ r2.unit=p.unit; var us=row.querySelector('[data-f="unit"]'); if(us) us.value=p.unit; } } } } }
+    if(el.tagName==="TEXTAREA" && t(el.value)) el.value=t(el.value)+" "+txt; else el.value=txt;
+    el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true}));
+  };
+  rec.onerror=function(ev){ b.title="Mic didn't work here ("+(ev.error||"error")+"). Use the mic on your keyboard."; };
+  rec.onend=function(){ b.classList.remove("on"); b.textContent="🎤"; activeRec=null; };
+  activeRec=rec; try{ rec.start(); }catch(e){ b.classList.remove("on"); b.textContent="🎤"; }
+}
+
+// ---------- init ----------
+$("add-row").addEventListener("click",addRow);
+$("tab-walk").addEventListener("click",function(){setTab("walk");}); $("tab-table").addEventListener("click",function(){setTab("table");});
+$("bar-walk").addEventListener("click",function(){ setTab("walk"); $("sec-rows").scrollIntoView({behavior:"smooth"}); });
+$("btn-check").addEventListener("click",runCheck); $("bar-check").addEventListener("click",runCheck);
+$("btn-xlsx").addEventListener("click",exportXLSX); $("btn-csv").addEventListener("click",exportCSV);
+$("btn-rev").addEventListener("click",startRevision);
+$("btn-new").addEventListener("click",newProject);
+$("btn-del").addEventListener("click",removeProject);
+bindHeader(); bindRows(); bindWalk(); bindProject(); bindNotes();
+$("btn-top-new").addEventListener("click",function(){ if(isEmptyProject(state)){ projMsg("This project is already blank. Start filling it in."); $("sec-project").scrollIntoView(); return; } newProject(); $("sec-project").scrollIntoView(); });
+$("btn-clear").addEventListener("click",clearForm);
+if(!STORAGE_OK){ $("store-banner").style.display=""; $("saved").textContent="Not saving here"; }
+renderHeader(); renderPrior(); renderLanding();
+attachMics(document);
+setTab(state.tab==="table"?"table":"walk");
+if(canExport()){ renderResult({pass:true,problems:[]}); } else if(state.checked){ renderResult(null); }
+updateExportButtons();
+if(state.savedAt) $("saved").textContent="Saved on this device "+fmtTime(new Date(state.savedAt));
+renderPicker(); renderFlags();
+$("nojs-banner").style.display="none";
+window.__L2 = {storageOk:STORAGE_OK, fnEntries:function(){return fnEntries();}, fnText:function(){return fnText();},state:function(){return JSON.parse(JSON.stringify(state));}, version:VERSION, spokenQty:spokenQty, hasSpeech:!!SR,
+  projects:function(){return readIndex();}, pid:function(){return state.pid;}, cm24:cm24, cmSuggest:cmSuggest};
+})();
+</script>
+</body>
+</html>
