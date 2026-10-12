@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#1f4e8c">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<title>Delta Level 2 Scoping v1.6</title>
+<title>Delta Level 2 Scoping v1.7</title>
 <style>
   :root{--ink:#1d2430;--mut:#5b6575;--line:#d5dae2;--bg:#f4f6f9;--card:#fff;--acc:#1f4e8c;--err:#b42318;--errbg:#fdecea;--warn:#8a5a00;--warnbg:#fff6e0;--ok:#1e7a3c;--okbg:#e7f5ec;--hold:#fff3c4}
   *{box-sizing:border-box}
@@ -161,6 +161,21 @@
   .flagwrap{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
   .flagwrap table{min-width:700px}
   tr.stuckrow td{background:#fdecea}
+  /* v1.7: stages, intake summary, locked admin */
+  nav.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0;position:sticky;top:56px;z-index:4;background:var(--bg);padding:4px 0}
+  nav.stages button{min-height:52px;font-weight:600;font-size:14px;line-height:1.2;padding:6px 8px}
+  nav.stages button small{display:block;font-weight:400;font-size:11px;opacity:.85}
+  nav.stages button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  nav.stages button.done:not(.on){border-color:var(--ok);color:var(--ok)}
+  .allst{font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center;justify-content:flex-end}
+  .allst input{width:auto}
+  .isum{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px;font-size:14px}
+  .isum div span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+  .gate{border:2px solid var(--acc);border-radius:10px;padding:12px;margin-top:14px;background:#f6f9fe}
+  .gate ul{margin:6px 0 0;padding-left:20px}
+  .locked input:disabled,.locked select:disabled,.locked textarea:disabled{background:#f1f3f6;color:#333;opacity:1}
+  .locked button.mic{display:none}
+  .lockbar{background:var(--okbg);border:1px solid #a9dcb9;color:#14532d;border-radius:8px;padding:8px 10px;font-size:14px;margin-bottom:10px}
   /* v1.6: banners + phone tap targets */
   .banner{border-radius:9px;padding:10px 12px;margin:10px 0;font-size:15px;line-height:1.4}
   .banner.stop{background:#fdecea;border:2px solid var(--err);color:#7a1610}
@@ -173,6 +188,8 @@
     button.sm{min-height:40px;padding:8px 12px}
     button.mic{min-height:34px;padding:4px 10px}
     .tradebar .tchip{min-height:42px}
+    nav.stages{position:static}
+    nav.stages button{font-size:13px;min-height:56px}
     .rgrid{grid-template-columns:repeat(2,1fr)}
     .c2,.c3,.c4{grid-column:span 1}.c5,.c9,.c12{grid-column:span 2}
     .wide-m{grid-column:span 2}
@@ -187,7 +204,7 @@
 </head>
 <body>
 <header class="top">
-  <h1>Delta Level 2 Scoping</h1><span class="ver" id="ver">v1.6</span><span class="ver" id="tv-badge">Table v1 (benchmark)</span>
+  <h1>Delta Level 2 Scoping</h1><span class="ver" id="ver">v1.7</span><span class="ver" id="tv-badge">Table v1 (benchmark)</span>
   <span class="saved" id="saved">Not saved yet</span><button type="button" class="hbtn" id="btn-top-new" title="Start a blank project (this one stays saved on this device)">New / Clear</button>
 </header>
 <main>
@@ -198,7 +215,8 @@
     <div class="projrow">
       <label class="f"><span class="l">Project on this device</span><select id="proj-select" aria-label="Open a project saved on this device"></select></label>
       <button type="button" id="btn-proj-new">New project</button>
-      <label class="filebtn" id="lbl-open"><input type="file" id="file-open" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>Open saved project (.xlsx)</label>
+      <label class="filebtn" id="lbl-intake"><input type="file" id="file-intake" hidden>Open intake file</label>
+      <label class="filebtn" id="lbl-open"><input type="file" id="file-open" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.json,application/json" hidden>Open saved project (.xlsx)</label>
       <button type="button" id="btn-share" disabled title="Unlocks once this version passes Check complete">Send project file</button>
     </div>
     <div class="hint" style="margin-top:6px">Each project saves separately on this device, so starting a new one never wipes another. The exported .xlsx is the project file: open it here on any device to continue from the right version, or send it to whoever is assigned.</div>
@@ -252,11 +270,16 @@
     <p class="hint">JobTread Budget, Xactimate, proposals, RFPs, pricing, sketches/callout drawings, PDFs.</p>
   </details>
 
+  <nav class="stages" id="stages" aria-label="Stages"><button type="button" id="stage-admin">1. Admin intake<small id="st-admin-sub">not handed off</small></button><button type="button" id="stage-inspect">2. Inspection<small id="st-inspect-sub">trades &amp; walk</small></button><button type="button" id="stage-table">3. Scope table / export<small id="st-table-sub">check &amp; export</small></button></nav>
+  <label class="allst"><input type="checkbox" id="all-stages"> Show all stages on one page</label>
   <div class="tipbar">🎤 <b>Tap the mic on your keyboard to speak.</b> Every text and number box takes dictation. Spoken numbers like "fourteen" become 14.</div>
 
-  <section class="card" id="sec-header">
-    <h2><span class="n">1</span>Job</h2>
-    <h3 class="grp">From lead intake</h3>
+  <section class="card stg-admin" id="sec-admin">
+    <h2><span class="n">1</span>Admin intake <span class="pill" id="admin-state"></span></h2>
+    <div class="hint" style="margin:-4px 0 8px">Filled in by Admin/Systems (Buddy) on desktop: lead intake, vetting and the capture plan. Then "Ready for inspection" hands it to the Inspector. <b>Inspector on site?</b> Use <b>Open intake file</b> in Project above.</div>
+    <div id="lockbar"></div>
+    <div id="admin-fields">
+    <h3 class="grp">Lead</h3>
     <div class="grid">
       <label class="f"><span class="l req">Job name</span><input id="h-job" autocomplete="off" autocapitalize="words" data-mic><span class="hint">Client name + job number, assigned once we decide to actively pursue the job.</span><span class="msg" data-for="job"></span></label>
       <label class="f"><span class="l req">Entity</span>
@@ -268,6 +291,10 @@
           <label><input type="radio" name="kind" value="non-damage"> Non-damage</label>
         </div>
         <span class="msg" data-for="kind"></span></div>
+      <label class="f"><span class="l req">Client name</span><input id="a-client" autocomplete="off" autocapitalize="words" data-mic><span class="hint">As the client gives it, e.g. Dr. Htin Aung.</span><span class="msg" data-for="client"></span></label>
+      <label class="f"><span class="l req">Referral source</span><input id="a-referral" autocomplete="off" autocapitalize="words" data-mic><span class="hint">Who sent them, e.g. "Sandy Wise", an agent, a past client, Google.</span></label>
+      <label class="f" style="grid-column:1/-1"><span class="l req">Address</span><input id="a-address" autocomplete="street-address" data-mic><span class="hint">Street, city, state, ZIP of the loss / job site.</span></label>
+      <label class="f" style="grid-column:1/-1" id="a-claim-wrap"><span class="l" id="lbl-claim">Insurance / claim info</span><input id="a-claim" autocomplete="off" data-mic><span class="hint">Carrier, claim #, adjuster (name, phone), date of loss. Damage jobs only; "Not filed yet" is fine.</span></label>
     </div>
     <div class="subgrp" id="cm-wrap">
       <div class="subhead">Capture method: hand sketch or Matterport (vetter)<span class="hint">After the lead is vetted and the inspection is initiated. Any yes → Matterport; all no → Hand sketch. None of this blocks Check complete or export.</span></div>
@@ -297,7 +324,33 @@
       <label class="f" id="cm-miss-wrap" style="display:none"><span class="l req">Miss reason</span><input id="cm-miss" autocomplete="off" data-mic placeholder="Why scope didn't start within 24 hours"><span class="cmwarn" id="cm-miss-msg"></span></label>
       <div class="cmnote" id="cm-note">The Inspector's checklist of required sketches and measurements comes from the app (<b>to build</b>; not in this version). Jason's existing JobTread callout visual is the reference standard for the visual.</div>
     </div>
-    <h3 class="grp" style="margin-top:16px">Inspector</h3>
+    <div class="subgrp" id="cap-wrap">
+      <div class="subhead">Capture plan<span class="hint">What the Inspector should capture on site. Known areas get captured for sure; contingent areas only if the findings call for it.</span></div>
+      <div class="grid">
+        <label class="f"><span class="l req">Known damage area(s)</span><input id="a-known" autocomplete="off" data-mic><span class="hint">E.g. Roof (south slope), Kitchen ceiling.</span></label>
+        <label class="f"><span class="l">Contingent area(s) (findings-dependent)</span><input id="a-contingent" autocomplete="off" data-mic><span class="hint">E.g. Interior below the roof leak, if staining is found.</span></label>
+        <label class="f"><span class="l req">Remote site?</span><select id="a-remote"><option value="">Choose</option><option>Yes</option><option>No</option></select><span class="hint">Yes = a second trip is costly, so the Inspector brings everything (e.g. Matterport) on the first visit.</span></label>
+        <label class="f"><span class="l req">Exterior capture method</span><select id="a-ext"><option value="">Choose</option><option>Hover</option><option>Hand sketch</option><option>Matterport</option><option>Not needed</option></select><span class="hint">E.g. Hover for roof / exterior.</span></label>
+        <label class="f"><span class="l req">Interior capture plan</span><select id="a-int"><option value="">Choose</option><option>Inspector's call on site</option><option>Hand sketch</option><option>Matterport</option><option>Not needed</option></select><span class="hint">Usually the Inspector's call on site: hand sketch unless it can't show the findings, then Matterport.</span></label>
+      </div>
+      <details style="margin-top:8px"><summary class="hint" style="font-weight:600">Worked example (Ben): the Luis Maisel lead</summary><div class="hint" style="margin-top:4px">Florida, known roof damage, interior unknown. Known damage area: Roof. Contingent: interior, depending on findings. Remote: Yes. Exterior capture: Hover (required). Interior: Inspector's call on site; he brings the Matterport but uses it only if a hand sketch can't show what he finds.</div></details>
+    </div>
+    </div>
+    <div class="gate" id="gate">
+      <b>Handoff to Inspector</b>
+      <div class="hint">Checks the intake, marks it handed off, and saves the intake file (<i>JobName_Intake_YYYY-MM-DD.json</i>) to send to the Inspector. He opens it on his phone with <b>Open intake file</b>.</div>
+      <div class="exp"><button type="button" class="pri" id="btn-handoff">Ready for inspection</button><button type="button" id="btn-intake-dl" style="display:none">Download intake file again</button><button type="button" id="btn-intake-share" style="display:none">Send intake file</button><button type="button" id="btn-reopen" style="display:none">Reopen intake for edits</button></div>
+      <div id="gate-msg" class="landing"></div>
+    </div>
+  </section>
+
+  <section class="card stg-inspect" id="sec-intakesum">
+    <h2>Intake from admin <span class="pill" id="isum-state"></span></h2>
+    <div id="isum"></div>
+  </section>
+  <section class="card stg-inspect" id="sec-header">
+    <h2><span class="n">2</span>Inspection</h2>
+    <h3 class="grp">Inspector</h3>
     <div class="grid">
       <label class="f"><span class="l req">Inspector</span><input id="h-inspector" autocomplete="off" autocapitalize="words" data-mic><span class="hint">The Inspector seat: Jason today, or an outside inspector.</span><span class="msg" data-for="inspector"></span></label>
       <div class="f"><span class="l">Inspection date</span>
@@ -313,12 +366,13 @@
         <div><button class="sm" type="button" id="add-src">+ Add source</button></div>
         <span class="hint">As named on the inspection report. Mark each one Confirmed or Unverified.</span>
         <span class="msg" data-for="sources"></span></div>
+      <label class="f"><span class="l">Interior capture used</span><select id="h-intused"><option value="">Choose</option><option>Hand sketch</option><option>Matterport</option><option>Hand sketch + Matterport</option><option>None (no interior)</option></select><span class="hint" id="intused-hint">Your call on site, per the capture plan.</span></label>
       <label class="f"><span class="l">Sketch / visuals ref (optional)</span><input id="h-sketch" autocomplete="off" data-mic placeholder="Matterport link and/or JobTread file names"><span class="hint">Points to the visuals already saved in JobTread: paste the <b>Matterport link</b> and/or the <b>plan or underlay file names</b> as they're named in JobTread's Files. E.g. <i>Matterport: https://my.matterport.com/show/?m=… ; JobTread: JobName_FloorPlan.pdf, JobName_L2_Underlay_v1.pdf</i>. Not uploaded here. Whether visuals must come before the table is OPEN.</span></label>
     </div>
   </section>
 
-  <section class="card" id="sec-rows">
-    <h2><span class="n">2</span>Scope <span class="pill v" id="tv-pill">Table v1 (benchmark)</span></h2>
+  <section class="card stg-inspect stg-table" id="sec-rows">
+    <h2><span class="n">3</span>Scope <span class="pill v" id="tv-pill">Table v1 (benchmark)</span></h2>
     <div class="tabs"><button type="button" id="tab-walk" class="on">Scope walk</button><button type="button" id="tab-table">Table (<span id="row-count">0</span>)</button></div>
     <div id="pane-walk"></div>
     <div id="pane-table" style="display:none">
@@ -328,8 +382,8 @@
     </div>
   </section>
 
-  <section class="card" id="sec-check">
-    <h2><span class="n">3</span>Check complete &amp; export</h2>
+  <section class="card stg-table" id="sec-check">
+    <h2><span class="n">4</span>Check complete &amp; export</h2>
     <label class="attest" id="attest-wrap"><input type="checkbox" id="attest">
       <span><b>I confirm every callout on my sketch or plan set has a row in this table, and no callout is on two rows.</b><br><span class="hint">The form can't see your visuals. This is the visuals half of Level 2 complete.</span></span></label>
     <div class="exp">
@@ -358,7 +412,7 @@
     <p class="hint">Start new opens a blank project; this one stays saved on this device (open it again from Project at the top). Remove clears only this project and its versions from this device. Export first if you need the file.</p>
     <div class="exp"><button type="button" id="btn-new">Start new project</button><button type="button" id="btn-clear">Clear this form</button><button type="button" id="btn-del">Remove this project from this device</button></div>
   </section>
-  <footer>Delta Level 2 Scoping · v1.6 (v1.5 + phone fixes; built on v1.3) · Rules: Level 2 Scoping Workbench (locked 2026-10-05) · Each project saves on this device; the exported .xlsx is the project file and the record</footer>
+  <footer>Delta Level 2 Scoping · v1.7 (two stages: admin intake + inspection; built on v1.6) · Rules: Level 2 Scoping Workbench (locked 2026-10-05) · Each project saves on this device; the exported .xlsx is the project file and the record</footer>
 </main>
 <div class="bar"><button type="button" id="bar-walk">Scope walk</button><button type="button" class="pri" id="bar-check">Check complete</button></div>
 <script>
@@ -367,7 +421,8 @@ window.addEventListener("error",function(e){ var b=document.getElementById("nojs
 <script>
 (function(){
 "use strict";
-var VERSION = "v1.6";
+var VERSION = "v1.7";
+// v1.7: two stages in one form. Admin intake (Buddy, desktop) -> Ready for inspection handoff (intake .json) -> Inspection (Jason, phone) -> Scope table & export. Same storage keys.
 // v1.6: phone fixes. "Not running" banner for email/file previews, storage-blocked banner, always-visible New / Clear, no job-like placeholders, bigger tap targets.
 // v1.5 (built on v1.3; v1.4 edits not included): free trade navigation, field notes + stuck flags, inspection/sketch ref guidance, GC "Item" guidance, inline rule examples.
 // Same storage keys and data model as v1.3 (adds state.fnotes and walk.skipped), so v1.3 projects on this device open here.
@@ -405,9 +460,9 @@ var STEPS = ["callout","action","material","location","qty","unit","finish","sta
 function blankCM(){ return {vetter:"",c1:"",c2:"",c3:"",threshold:"",override:"",overrideReason:"",operator:"",mpDate:"",underlay:"",scopeStart:"",missReason:""}; }
 function newPid(){ return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function blankState(){
-  return {v:3, pid:newPid(), createdAt:new Date().toISOString(), header:{job:"",entity:"",kind:"",inspector:"",idateT:"",idateA:"",sdateT:"",sdateA:todayISO(),insp:"",inspVer:"v1",sources:[{text:"",conf:""}],sketch:"",walkNotes:"",cm:blankCM()},
+  return {v:3, pid:newPid(), createdAt:new Date().toISOString(), header:{job:"",entity:"",kind:"",inspector:"",idateT:"",idateA:"",sdateT:"",sdateA:todayISO(),insp:"",inspVer:"v1",sources:[{text:"",conf:""}],sketch:"",walkNotes:"",cm:blankCM(),client:"",referral:"",address:"",claim:"",capKnown:"",capCont:"",capRemote:"",capExt:"",capInt:"",intUsed:""},
           rows:[], attest:false, passedHash:null, passedAt:null, checked:false, savedAt:null, seq:0,
-          version:1, prior:[], tab:"walk", walk:{phase:"pick",trades:[],ti:0,rowId:null,step:"callout",skipped:[]}, fnotes:{}};
+          version:1, prior:[], tab:"walk", stage:{handedOff:false,at:null,by:"",missing:[],skipped:false,skippedAt:null,imported:null}, ui:"admin", walk:{phase:"pick",trades:[],ti:0,rowId:null,step:"callout",skipped:[]}, fnotes:{}};
 }
 function migrate(s){
   if(!s) return null;
@@ -418,6 +473,8 @@ function migrate(s){
     var cm=blankCM(), old=s.header.cm||{}; Object.keys(cm).forEach(function(k){ if(old[k]!=null) cm[k]=old[k]; }); s.header.cm=cm;
     s.v=3; if(!s.pid) s.pid=newPid(); if(!s.prior) s.prior=[]; if(!s.rows) s.rows=[]; if(!s.version) s.version=1;
     if(!s.fnotes || typeof s.fnotes!=="object") s.fnotes={};
+    ["client","referral","address","claim","capKnown","capCont","capRemote","capExt","capInt","intUsed"].forEach(function(k){ if(s.header[k]==null) s.header[k]=""; });
+    if(!s.stage || typeof s.stage!=="object") s.stage={handedOff:false,at:null,by:"",missing:[],skipped:false,skippedAt:null,imported:null};
     return s;
   }
   if(s.v===1){ // v1.0 saved job -> v1.1
@@ -450,6 +507,7 @@ var state=null;
 })();
 if(!state.walk) state.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"};
 if(!state.fnotes) state.fnotes={};
+if(!state.stage) state.stage={handedOff:false,at:null,by:"",missing:[],skipped:false,skippedAt:null,imported:null};
 
 var $ = function(id){return document.getElementById(id);};
 var saveTimer=null;
@@ -479,7 +537,7 @@ function invalidate(){
 }
 function contentHash(){
   var h=state.header;
-  return JSON.stringify({h:[h.job,h.entity,h.kind,h.inspector,h.idateT,h.idateA,h.sdateT,h.sdateA,h.insp,h.inspVer,h.sources,h.sketch,h.walkNotes,h.cm||blankCM()],a:state.attest,v:state.version,
+  return JSON.stringify({h:[h.job,h.entity,h.kind,h.inspector,h.idateT,h.idateA,h.sdateT,h.sdateA,h.insp,h.inspVer,h.sources,h.sketch,h.walkNotes,h.cm||blankCM(),h.client,h.referral,h.address,h.claim,h.capKnown,h.capCont,h.capRemote,h.capExt,h.capInt,h.intUsed],a:state.attest,v:state.version,
     r:state.rows.map(function(r){return FIELDS.map(function(f){return r[f];});})});
 }
 function t(s){return (s==null?"":String(s)).trim();}
@@ -616,7 +674,7 @@ function opts(list, sel, placeholder, labeler){
   return h;
 }
 // ---------- header ----------
-var HMAP={"h-job":"job","h-entity":"entity","h-inspector":"inspector","h-idate-t":"idateT","h-idate-a":"idateA","h-sdate-t":"sdateT","h-sdate-a":"sdateA","h-insp":"insp","h-inspver":"inspVer","h-sketch":"sketch"};
+var HMAP={"a-client":"client","a-referral":"referral","a-address":"address","a-claim":"claim","a-known":"capKnown","a-contingent":"capCont","a-remote":"capRemote","a-ext":"capExt","a-int":"capInt","h-intused":"intUsed","h-job":"job","h-entity":"entity","h-inspector":"inspector","h-idate-t":"idateT","h-idate-a":"idateA","h-sdate-t":"sdateT","h-sdate-a":"sdateA","h-insp":"insp","h-inspver":"inspVer","h-sketch":"sketch"};
 function checkInspFmt(){
   var el=$("insp-fmt"); if(!el) return; var v=t(state.header.insp);
   if(!v){ el.textContent=""; return; }
@@ -636,7 +694,7 @@ function renderHeader(){
   renderSources(); applyKind();
   $("attest").checked=!!state.attest;
   renderCapture(false);
-  renderHeaderNotes(); checkInspFmt();
+  renderHeaderNotes(); checkInspFmt(); applyKindClaim(); applyLock();
 }
 // ---------- capture method (vetter) ----------
 var CMMAP={"cm-vetter":"vetter","cm-threshold":"threshold","cm-override":"override","cm-reason":"overrideReason","cm-operator":"operator","cm-mpdate":"mpDate","cm-underlay":"underlay","cm-scopestart":"scopeStart","cm-miss":"missReason"};
@@ -689,7 +747,7 @@ function renderSources(){
 function bindHeader(){
   Object.keys(HMAP).forEach(function(id){
     var el=$(id), ev = el.tagName==="SELECT"||el.type==="date" ? "change":"input";
-    el.addEventListener(ev,function(){ state.header[HMAP[id]]=this.value; changed(); if(state.checked) refreshValidation(); checkInspFmt(); });
+    el.addEventListener(ev,function(){ state.header[HMAP[id]]=this.value; changed(); if(state.checked) refreshValidation(); checkInspFmt(); if(id==="h-entity"||id==="h-job") renderStageChrome(); });
     el.addEventListener("blur",function(){ if(!state.headerTouched){ state.headerTouched=true; setTimeout(refreshValidation, 300); } });
   });
   document.querySelectorAll('input[name=kind]').forEach(function(x){ x.addEventListener("change",function(){ state.header.kind=this.value; state.headerTouched=true; applyKind(); changed(); refreshValidation(); }); });
@@ -762,7 +820,7 @@ function refreshValidation(){
   });
   renderFlags();
   var he=validateHeader(), showH = state.checked || state.headerTouched;
-  document.querySelectorAll('#sec-header .msg[data-for]').forEach(function(m){
+  document.querySelectorAll('#sec-admin .msg[data-for], #sec-header .msg[data-for]').forEach(function(m){
     var k=m.getAttribute("data-for"); m.textContent = showH && he[k] ? he[k] : "";
   });
   var map={job:"h-job",entity:"h-entity",inspector:"h-inspector",sdate:"h-sdate-a",insp:"h-insp"};
@@ -1037,6 +1095,7 @@ function bindWalk(){
 }
 // ---------- full check ----------
 function runCheck(){
+  if(curStage()!=="table") setStage("table",true);
   state.checked=true;
   var problems=[], he=validateHeader(), counts=calloutCounts();
   Object.keys(he).forEach(function(k){ problems.push({where:"Job", msg:he[k]}); });
@@ -1239,6 +1298,11 @@ function buildXlsx(){
     {cells:["Delta Level 2 plan-set table"],style:4},{cells:[]},
     {cells:["From lead intake"],style:5},
     ["Job name",t(h.job)],["Entity",h.entity],["Job type",h.kind==="damage"?"Damage":"Non-damage"],
+    ["Client name",t(h.client)],["Referral source",t(h.referral)],["Address",t(h.address)],["Insurance / claim info",t(h.claim)||(h.kind==="damage"?"":"n/a (non-damage)")],
+    {cells:[]},{cells:["Capture plan"],style:5},
+    ["Known damage area(s)",t(h.capKnown)],["Contingent area(s)",t(h.capCont)],["Remote site",h.capRemote||""],["Exterior capture method",h.capExt||""],["Interior capture plan",h.capInt||""],["Interior capture used (Inspector)",h.intUsed||""],
+    {cells:[]},{cells:["Intake handoff"],style:5},
+    ["Intake status",intakeStatus()],["Handed off by",t(state.stage.by)],["Handed off at",state.stage.at?fmtStamp(new Date(state.stage.at)):""],["Missing at handoff",(state.stage.missing||[]).join("; ")||(state.stage.handedOff?"None":"")],["Intake file opened on inspector device",state.stage.imported?fmtStamp(new Date(state.stage.imported)):""],
     {cells:[]},{cells:["Capture method (vetter)"],style:5},
     ["Vetter",t(cm.vetter)],
     ["Check 1: size or complexity beyond a simple room",yn(cm.c1)],
@@ -1314,7 +1378,7 @@ function buildXlsx(){
   sheets.push({name:"How to read", xml:sheetXml(howRows,{widths:[110]})});
   // hidden sheet: the exact project (all versions, row ids) so Open saved project restores it exactly
   var payload=JSON.stringify({format:1, form:VERSION, pid:state.pid, exportedAt:new Date().toISOString(),
-    state:{v:3, pid:state.pid, createdAt:state.createdAt, header:h, rows:snapshotRows(state.rows), prior:state.prior, version:state.version, passedAt:state.passedAt, seq:state.seq, attest:state.attest, fnotes:state.fnotes||{}}});
+    state:{v:3, pid:state.pid, createdAt:state.createdAt, header:h, rows:snapshotRows(state.rows), prior:state.prior, version:state.version, passedAt:state.passedAt, seq:state.seq, attest:state.attest, fnotes:state.fnotes||{}, stage:state.stage}});
   var drows=[{cells:[DATA_MARK,"1","Used by Open saved project. Don't edit."]}];
   for(var pi=0;pi<payload.length;pi+=30000) drows.push({cells:[payload.slice(pi,pi+30000)]});
   sheets.push({name:DATA_SHEET, xml:sheetXml(drows,{widths:[60]}), hidden:true});
@@ -1345,6 +1409,7 @@ function fmtShort(iso){ var d=new Date(iso); if(isNaN(d)) return ""; return (d.g
 function isEmptyProject(s){
   var h=s.header, cm=h.cm||{};
   if(s.fnotes && Object.keys(s.fnotes).length) return false;
+  if(["client","referral","address","claim","capKnown","capCont","capRemote","capExt","capInt","intUsed"].some(function(k){return t(h[k]);})) return false;
   return !t(h.job) && !h.entity && !h.kind && !t(h.inspector) && !t(h.insp) && !t(h.sketch) && !t(h.walkNotes) && !(h.sources||[]).some(function(x){return t(x.text)||x.conf;}) &&
     !s.rows.length && !s.prior.length && !Object.keys(cm).some(function(k){return t(cm[k]);});
 }
@@ -1363,7 +1428,7 @@ function loadIntoUI(){
   renderHeader(); attachMics(document); $("result").innerHTML=""; renderPrior(); renderLanding();
   setTab(state.tab==="table"?"table":"walk");
   if(canExport()) renderResult({pass:true,problems:[]}); else if(state.checked) renderResult(null);
-  updateExportButtons(); renderPicker();
+  updateExportButtons(); renderPicker(); renderStage();
   window.scrollTo(0,0);
 }
 function switchProject(pid){
@@ -1515,6 +1580,9 @@ function buildFromWorkbook(wb){
     h.inspector=cstr(J["Inspector"]); h.idateT=dateCell(J["Inspection date (target)"]); h.idateA=dateCell(J["Inspection date (actual)"]); h.sdateT=dateCell(J["Scope date (target)"]); h.sdateA=dateCell(J["Scope date (actual)"]);
     var ir=cstr(J["Inspection report ref"]); h.insp = /^n\/a/.test(ir) ? "" : ir; h.inspVer=cstr(J["Inspection report version"])||"v1";
     var src=cstr(J["Damage source(s)"]); h.sources = (!src || /^n\/a/.test(src)) ? [{text:"",conf:""}] : src.split(/;\s*/).map(function(x){ var m=/^(.*?)\s*\((Confirmed|Unverified)\)$/.exec(x); return m?{text:m[1],conf:m[2]}:{text:x,conf:""}; });
+    h.client=cstr(J["Client name"]); h.referral=cstr(J["Referral source"]); h.address=cstr(J["Address"]); var cl=cstr(J["Insurance / claim info"]); h.claim=/^n\/a/.test(cl)?"":cl;
+    h.capKnown=cstr(J["Known damage area(s)"]); h.capCont=cstr(J["Contingent area(s)"]); h.capRemote=cstr(J["Remote site"]); h.capExt=cstr(J["Exterior capture method"]); h.capInt=cstr(J["Interior capture plan"]); h.intUsed=cstr(J["Interior capture used (Inspector)"]);
+    if(/^Handed off/.test(cstr(J["Intake status"]))){ s.stage.handedOff=true; s.stage.at=parseStamp(J["Handed off at"]); s.stage.by=cstr(J["Handed off by"]); }
     var sk=cstr(J["Sketch / visuals ref"]); h.sketch = sk==="Not given" ? "" : sk; h.walkNotes=cstr(J["Scope walk notes"]);
     var ry=function(v){ v=cstr(v); return v==="Yes"?"yes":v==="No"?"no":""; };
     cm.vetter=cstr(J["Vetter"]); cm.c1=ry(J["Check 1: size or complexity beyond a simple room"]); cm.c2=ry(J["Check 2: dimensions can't be captured reliably by hand"]); cm.c3=ry(J["Check 3: spatial record needed beyond the site visit"]);
@@ -1532,12 +1600,13 @@ function buildFromWorkbook(wb){
     s.passedAt=parseStamp(J["Check complete"]); s.attest=true; s.seq=s.rows.length;
     var pidCell=cstr(J["Project ID"]); if(pidCell) s.pid=pidCell;
   }
-  s.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"}; s.tab="table"; s.checked=false;
+  s.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout"}; s.tab="table"; s.ui="table"; s.checked=false;
   var passed=silentPass(s);
   return {state:s, mode:mode, note:note, passed:passed};
 }
 function openProjectFile(file){
   if(!file) return;
+  if(/\.json$/i.test(file.name) || /json/.test(file.type||"")){ openIntakeFile(file); return; }
   projMsg("Opening "+esc(file.name)+"…");
   file.arrayBuffer().then(readXlsx).then(function(wb){
     var res=buildFromWorkbook(wb), s=res.state;
@@ -1558,13 +1627,137 @@ function bindProject(){
   $("btn-share").addEventListener("click",shareProject);
 }
 
+// ---------- v1.7: stages, handoff gate, intake file ----------
+var INTAKE_MARK="DELTA-L2-INTAKE";
+function curStage(){ return state.ui==="inspect"||state.ui==="table" ? state.ui : "admin"; }
+function allStages(){ try{ return lsGet("delta-l2-v17-allstages")==="1" || /[?&]all=1\b/.test(location.search); }catch(e){ return false; } }
+function setStage(st, keepScroll){
+  state.ui=st; renderStage(); save();
+  if(st==="table") setTab("table"); else if(st==="inspect" && state.tab!=="walk") setTab("walk");
+  if(!keepScroll) window.scrollTo(0,0);
+}
+function renderStage(){
+  var st=curStage(), all=allStages();
+  document.querySelectorAll("section.stg-admin,section.stg-inspect,section.stg-table").forEach(function(sec){
+    sec.style.display = (all || sec.classList.contains("stg-"+st)) ? "" : "none"; });
+  ["admin","inspect","table"].forEach(function(x){ $("stage-"+x).classList.toggle("on", x===st && !all); });
+  $("all-stages").checked=all;
+  renderStageChrome();
+}
+function intakeStatus(){
+  var g=state.stage||{};
+  if(g.handedOff) return "Handed off "+(g.at?fmtStamp(new Date(g.at)):"")+((g.missing||[]).length?" (with "+g.missing.length+" missing)":"");
+  if(g.skipped) return "Skipped: inspection started without an intake file "+(g.skippedAt?fmtStamp(new Date(g.skippedAt)):"");
+  return "Not handed off";
+}
+function intakeMissing(){
+  var h=state.header, cm=h.cm||{}, m=[];
+  if(!t(h.job)) m.push("Job name"); if(!h.entity) m.push("Entity"); if(h.kind!=="damage"&&h.kind!=="non-damage") m.push("Job type (Damage / Non-damage)");
+  if(!t(h.client)) m.push("Client name"); if(!t(h.referral)) m.push("Referral source"); if(!t(h.address)) m.push("Address");
+  if(h.kind==="damage" && !t(h.claim)) m.push("Insurance / claim info (damage job)");
+  if(!t(cm.vetter)) m.push("Vetter"); if(!cm.c1||!cm.c2||!cm.c3) m.push("Vetting checks 1-3");
+  if(!t(h.capKnown)) m.push("Known damage area(s)"); if(!h.capRemote) m.push("Remote site (yes/no)"); if(!h.capExt) m.push("Exterior capture method"); if(!h.capInt) m.push("Interior capture plan");
+  return m;
+}
+function applyKindClaim(){ var d=state.header.kind==="damage"; $("lbl-claim").className="l"+(d?" req":""); }
+function applyLock(){
+  var lk=!!(state.stage && state.stage.handedOff), box=$("sec-admin");
+  box.classList.toggle("locked",lk);
+  box.querySelectorAll("#admin-fields input, #admin-fields select, #admin-fields textarea").forEach(function(el){ if(!el.hasAttribute("data-fnote")) el.disabled=lk; });
+  $("lockbar").innerHTML = lk ? '<div class="lockbar"><b>Handed off to the Inspector '+esc(state.stage.at?fmtStamp(new Date(state.stage.at)):"")+'.</b> These fields are read-only now. Something wrong? Tap <b>✎ Request correction</b> under the field; Admin sees it in Field notes &amp; stuck flags.</div>' : "";
+  $("btn-handoff").style.display = lk ? "none" : "";
+  ["btn-intake-dl","btn-intake-share","btn-reopen"].forEach(function(id){ $(id).style.display = lk ? "" : "none"; });
+}
+function renderStageChrome(){
+  var g=state.stage||{}, h=state.header;
+  $("st-admin-sub").textContent = g.handedOff ? "handed off ✓" : (g.skipped ? "skipped" : "not handed off");
+  $("stage-admin").classList.toggle("done", !!g.handedOff);
+  $("admin-state").textContent = g.handedOff ? "Handed off" : "In progress"; $("admin-state").className = "pill"+(g.handedOff?" g":"");
+  $("st-table-sub").textContent = canExport() ? "passed ✓" : "check & export";
+  // inspector summary
+  var row=function(l,v){ return '<div><span>'+esc(l)+'</span>'+(t(v)?esc(v):'<i style="color:var(--mut)">not given</i>')+'</div>'; };
+  var html="";
+  if(!g.handedOff){
+    html+='<div class="banner warn" id="skip-warn" style="margin-top:0"><b>'+(g.skipped?'Intake was skipped.':'No intake file loaded.')+'</b>'+(g.skipped?'This inspection started without Admin\'s intake. Client, address, claim and capture plan may be missing; fill them in under Admin intake or ask Admin to send the intake file.':'Open the intake file Admin sent you (Project → <b>Open intake file</b>). Or continue without it; the job will be marked "intake skipped".')+
+      '<div class="exp"><label class="filebtn"><input type="file" id="file-intake2" hidden>Open intake file</label>'+(g.skipped?'':'<button type="button" id="btn-skip-intake">Continue without intake</button>')+'</div></div>';
+  }
+  html+='<div class="isum" id="isum-grid">'+row("Job",h.job)+row("Client",h.client)+row("Referral",h.referral)+row("Address",h.address)+row("Type",h.kind==="damage"?"Damage":h.kind==="non-damage"?"Non-damage":"")+row("Insurance / claim",h.claim)+
+    row("Known damage area(s)",h.capKnown)+row("Contingent area(s)",h.capCont)+row("Remote site",h.capRemote)+row("Exterior capture",h.capExt)+row("Interior capture plan",h.capInt)+row("Handed off",g.handedOff&&g.at?fmtStamp(new Date(g.at))+(t(g.by)?" by "+t(g.by):""):"")+'</div>';
+  if(g.handedOff && (g.missing||[]).length) html+='<div class="cmwarn" style="margin-top:6px">Handed off with missing: '+esc(g.missing.join(", "))+'.</div>';
+  $("isum").innerHTML=html;
+  $("isum-state").textContent = g.handedOff ? "handed off" : (g.skipped ? "skipped" : "none"); $("isum-state").className="pill"+(g.handedOff?" g":" h");
+  var ih=$("intused-hint"); if(ih) ih.textContent = h.capInt ? "Plan from Admin: "+h.capInt+(h.capRemote==="Yes"?" (remote site: bring the Matterport)":"")+"." : "Your call on site, per the capture plan.";
+}
+function intakeName(){ var j=t(state.header.job).replace(/[^A-Za-z0-9 _.-]+/g,"").replace(/\s+/g,"_").replace(/_+/g,"_").replace(/^[_.-]+|[_.-]+$/g,"")||"Job"; return j+"_Intake_"+(state.stage.localDate||todayISO())+".json"; }
+function intakePayload(){
+  return JSON.stringify({format:INTAKE_MARK, formatVersion:1, form:VERSION, exportedAt:new Date().toISOString(), pid:state.pid,
+    state:{v:3, pid:state.pid, createdAt:state.createdAt, header:state.header, rows:snapshotRows(state.rows), prior:state.prior, version:state.version, seq:state.seq, fnotes:state.fnotes||{}, stage:state.stage}}, null, 1);
+}
+function localDateISO(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function downloadIntake(){ download(intakeName(),"application/json",intakePayload()); $("gate-msg").innerHTML='<b style="color:var(--ok)">Intake file saved: '+esc(intakeName())+'.</b> Send it to the Inspector (email or text). He opens it on his phone with <b>Open intake file</b>.'; }
+function shareIntake(){
+  var name=intakeName(), data=intakePayload();
+  try{ var f=new File([data],name,{type:"application/json"}); if(navigator.canShare && navigator.share && navigator.canShare({files:[f]})){ navigator.share({files:[f],title:name,text:"Intake file. Open it in Delta Scope Form with Open intake file."}).catch(function(){}); return; } }catch(e){}
+  downloadIntake();
+}
+function handoff(){
+  var miss=intakeMissing();
+  $("gate-msg").innerHTML = miss.length ? '<div class="cmwarn" id="gate-missing" style="font-size:14px"><b>Missing ('+miss.length+'):</b><ul>'+miss.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul></div>' : '';
+  if(miss.length && !confirm("The intake is missing "+miss.length+" item(s):\n- "+miss.join("\n- ")+"\n\nHand it off anyway? The missing items are recorded with the handoff.")) return;
+  var now=new Date();
+  state.stage.handedOff=true; state.stage.at=now.toISOString(); state.stage.by=t(state.header.cm.vetter)||"Admin"; state.stage.missing=miss; state.stage.skipped=false;
+  state.stage.at=state.stage.at; state.stage.localDate=localDateISO(now);
+  changed(); flushSave(); renderHeader(); renderStageChrome();
+  downloadIntake();
+  if(miss.length) $("gate-msg").innerHTML += '<div class="cmwarn">Handed off with '+miss.length+' missing: '+esc(miss.join(", "))+'.</div>';
+}
+function reopenIntake(){
+  if(!confirm("Reopen the intake for edits? It goes back to 'not handed off'. After fixing it, press Ready for inspection again and send the new intake file.")) return;
+  state.stage.handedOff=false; state.stage.reopenedAt=new Date().toISOString(); changed(); flushSave(); renderHeader(); renderStageChrome(); $("gate-msg").innerHTML="Intake reopened. Fix it, then press Ready for inspection.";
+}
+function skipIntake(){
+  if(!confirm("Start the inspection without an intake file? The job will be marked 'intake skipped' in the export.")) return;
+  state.stage.skipped=true; state.stage.skippedAt=new Date().toISOString(); changed(); renderStageChrome();
+}
+function openIntakeFile(file){
+  if(!file) return;
+  projMsg("Opening "+esc(file.name)+"…");
+  var rd=new FileReader();
+  rd.onerror=function(){ projMsg('<span class="msg" id="intake-err">Couldn\'t read '+esc(file.name)+'.</span>'); };
+  rd.onload=function(){
+    var p=null; try{ p=JSON.parse(String(rd.result||"")); }catch(e){}
+    if(!p || p.format!==INTAKE_MARK || !p.state || !p.state.header){ projMsg('<span class="msg" id="intake-err">'+esc(file.name)+' isn\'t an intake file from this form. Ask Admin to press Ready for inspection and send the .json file it saves.</span>'); return; }
+    var s=migrate(JSON.parse(JSON.stringify(p.state))); if(!s){ projMsg('<span class="msg" id="intake-err">That intake file looks damaged.</span>'); return; }
+    s.pid=p.pid||s.pid; s.walk={phase:"pick",trades:[],ti:0,rowId:null,step:"callout",skipped:[]}; s.tab="walk"; s.ui="inspect"; s.checked=false; s.passedHash=null; s.passedAt=null;
+    s.stage.imported=new Date().toISOString(); (s.rows||[]).forEach(function(r){ r.touched=true; });
+    var existing=readIndex().filter(function(x){return x.pid===s.pid;})[0];
+    if(existing && !confirm('This job ("'+(existing.job||"Untitled project")+'") is already on this device. Replace it with the intake file? Anything already entered for it on this device is replaced.')){ projMsg("Not opened. The device copy was kept."); return; }
+    flushSave(); if(isEmptyProject(state) && state.pid!==s.pid) dropProject(state.pid);
+    state=s; save(); loadIntoUI(); setStage("inspect");
+    projMsg('<b id="intake-ok">Opened intake: '+esc(t(s.header.job)||"Untitled")+'</b>'+(t(s.header.client)?' · '+esc(t(s.header.client)):'')+'. Pick the trades below and start the walk.');
+  };
+  rd.readAsText(file);
+}
+function bindStages(){
+  ["admin","inspect","table"].forEach(function(x){ $("stage-"+x).addEventListener("click",function(){ if(allStages()){ lsSet("delta-l2-v17-allstages","0"); } setStage(x); }); });
+  $("all-stages").addEventListener("change",function(){ lsSet("delta-l2-v17-allstages",this.checked?"1":"0"); renderStage(); });
+  $("btn-handoff").addEventListener("click",handoff);
+  $("btn-intake-dl").addEventListener("click",downloadIntake);
+  $("btn-intake-share").addEventListener("click",shareIntake);
+  $("btn-reopen").addEventListener("click",reopenIntake);
+  $("file-intake").addEventListener("change",function(){ var f=this.files&&this.files[0]; this.value=""; openIntakeFile(f); });
+  document.addEventListener("change",function(e){ if(e.target && e.target.id==="file-intake2"){ var f=e.target.files&&e.target.files[0]; e.target.value=""; openIntakeFile(f); } });
+  document.addEventListener("click",function(e){ if(e.target && e.target.id==="btn-skip-intake") skipIntake(); });
+  document.querySelectorAll('input[name=kind]').forEach(function(x){ x.addEventListener("change",function(){ applyKindClaim(); renderStageChrome(); }); });
+}
+
 // ---------- v1.5: field notes + stuck flags ----------
 // One optional note (typed or spoken) and one "Stuck" flag per input. Kept in state.fnotes, keyed:
 //   h:<element id> for Job fields, h:trades, h:walkNotes; r:<row id>:<field> for scope rows (same key in Walk and Table).
 // Notes don't count as table content, so adding one never re-locks a passed Check complete.
-var HNOTE=[["h-job","Job name"],["h-entity","Entity"],["h-kind","Job type"],["cm-vetter","Vetter"],["cm-c1","Capture check 1 (size/complexity)"],["cm-threshold","Size/complexity threshold"],["cm-c2","Capture check 2 (dimensions)"],["cm-c3","Capture check 3 (spatial record)"],["cm-override","Capture method used"],["cm-reason","Override reason"],["cm-operator","Matterport operator"],["cm-mpdate","Matterport task scheduled"],["cm-underlay","Underlay ready"],["cm-scopestart","Scope start"],["cm-miss","Miss reason"],["h-inspector","Inspector"],["h-idate-t","Inspection date"],["h-sdate-t","Scope date"],["h-insp","Inspection report ref"],["h-sources","Damage source(s)"],["h-sketch","Sketch / visuals ref"],["attest","Callout coverage confirmation"]];
+var HNOTE=[["h-job","Job name"],["h-entity","Entity"],["h-kind","Job type"],["a-client","Client name"],["a-referral","Referral source"],["a-address","Address"],["a-claim","Insurance / claim info"],["cm-vetter","Vetter"],["cm-c1","Capture check 1 (size/complexity)"],["cm-threshold","Size/complexity threshold"],["cm-c2","Capture check 2 (dimensions)"],["cm-c3","Capture check 3 (spatial record)"],["cm-override","Capture method used"],["cm-reason","Override reason"],["cm-operator","Matterport operator"],["cm-mpdate","Matterport task scheduled"],["cm-underlay","Underlay ready"],["cm-scopestart","Scope start"],["cm-miss","Miss reason"],["a-known","Known damage area(s)"],["a-contingent","Contingent area(s)"],["a-remote","Remote site"],["a-ext","Exterior capture method"],["a-int","Interior capture plan"],["h-inspector","Inspector"],["h-idate-t","Inspection date"],["h-sdate-t","Scope date"],["h-insp","Inspection report ref"],["h-intused","Interior capture used"],["h-sources","Damage source(s)"],["h-sketch","Sketch / visuals ref"],["attest","Callout coverage confirmation"]];
 var HLABEL={"h:trades":"Trades that apply / walk order","h:walkNotes":"Scope walk notes"}; HNOTE.forEach(function(x){ HLABEL["h:"+x[0]]=x[1]; });
-var HVAL={"h-job":"job","h-entity":"entity","h-kind":"kind","h-inspector":"inspector","h-insp":"insp","h-sketch":"sketch"};
+var HVAL={"a-client":"client","a-referral":"referral","a-address":"address","a-claim":"claim","a-known":"capKnown","a-contingent":"capCont","a-remote":"capRemote","a-ext":"capExt","a-int":"capInt","h-intused":"intUsed","h-job":"job","h-entity":"entity","h-kind":"kind","h-inspector":"inspector","h-insp":"insp","h-sketch":"sketch"};
 var RLABEL={callout:"Callout ID(s)",trade:"Trade",action:"Action",material:"Material",location:"Location",qty:"Qty",unit:"Unit",finish:"Finish",status:"Status",note:"Note",selection:"Selection"};
 var FN_COLS=["Flag","Section","Trade","Line","Field","Value entered","Note","Updated"];
 function fnGet(k){ return (state.fnotes && state.fnotes[k]) || {note:"",stuck:false}; }
@@ -1577,12 +1770,13 @@ function fnSet(k,patch){
 }
 function fnPrune(rowId){ if(!rowId||!state.fnotes) return; var pre="r:"+rowId+":"; Object.keys(state.fnotes).forEach(function(k){ if(k.indexOf(pre)===0) delete state.fnotes[k]; }); }
 function noteUI(k){
-  var n=fnGet(k), has=!!t(n.note);
-  return '<div class="fn" data-fnk="'+esc(k)+'"><button type="button" data-fnbtn class="'+(has?'has':'')+'" title="Add an optional note (type or speak)">'+(has?'📝 Note ✓':'📝 Note')+'</button>'+
+  var n=fnGet(k), has=!!t(n.note), corr=isAdminKey(k) && state.stage && state.stage.handedOff, lbl=corr?'✎ Request correction':'📝 Note';
+  return '<div class="fn" data-fnk="'+esc(k)+'"><button type="button" data-fnbtn class="'+(has?'has':'')+'" title="'+(corr?'Intake is locked. Say what needs correcting; Admin sees it in the notes list.':'Add an optional note (type or speak)')+'">'+(has?lbl+' ✓':lbl)+'</button>'+
     '<button type="button" data-fnstuck class="stuck'+(n.stuck?' on':'')+'" aria-pressed="'+(n.stuck?'true':'false')+'" title="Flag this field: I got stuck or confused here">'+(n.stuck?'⚑ Stuck':'⚑ Stuck?')+'</button>'+
     '<div class="fnbox"'+(has||n.stuck?'':' hidden')+'><textarea data-fnote rows="2" aria-label="Note for '+esc(fnLabel(k))+'" placeholder="Optional: the info, or what\'s unclear or blocking you here">'+esc(n.note)+'</textarea><button type="button" data-fnmic title="Speak the note" aria-label="Speak the note">🎤</button></div><div class="fnmsg" hidden></div></div>';
 }
 function fnLabel(k){ if(k.indexOf("h:")===0) return HLABEL[k]||k.slice(2); var f=k.slice(k.lastIndexOf(":")+1); return RLABEL[f]||f; }
+function isAdminKey(k){ if(k.indexOf("h:")!==0) return false; var el=$(k.slice(2)); return !!(el && el.closest && el.closest("#sec-admin")); }
 function renderHeaderNotes(){
   document.querySelectorAll('[data-hn]').forEach(function(x){ x.remove(); });
   HNOTE.forEach(function(x){
@@ -1599,7 +1793,7 @@ function fnEntries(){
     var n=fn[k]; if(!n || (!t(n.note) && !n.stuck)) return;
     var e={key:k, stuck:!!n.stuck, note:t(n.note), at:n.at||""};
     if(k.indexOf("h:")===0){
-      var id=k.slice(2); e.section="Job"; e.trade=""; e.line=""; e.field=HLABEL[k]||id; e.sort=[0,order[k]!=null?order[k]:99,0];
+      var id=k.slice(2); e.section=isAdminKey(k)?(state.stage.handedOff?"Admin intake (correction request)":"Admin intake"):"Inspection"; e.trade=""; e.line=""; e.field=HLABEL[k]||id; e.sort=[0,order[k]!=null?order[k]:99,0];
       if(id==="trades"){ e.section="Scope walk"; e.value=W().trades.join(", "); }
       else if(id==="walkNotes"){ e.section="Scope walk"; e.value=t(state.header.walkNotes); }
       else if(HVAL[id]) e.value=t(state.header[HVAL[id]]);
@@ -1688,7 +1882,7 @@ function bindNotes(){
   document.addEventListener("input",function(e){
     var ta=e.target; if(!ta.hasAttribute || !ta.hasAttribute("data-fnote")) return;
     var wrap=ta.closest(".fn"), k=wrap.getAttribute("data-fnk"); fnSet(k,{note:ta.value});
-    var nb=wrap.querySelector("[data-fnbtn]"), has=!!t(ta.value); nb.classList.toggle("has",has); nb.textContent=has?"📝 Note ✓":"📝 Note";
+    var nb=wrap.querySelector("[data-fnbtn]"), has=!!t(ta.value); nb.classList.toggle("has",has); var base=(isAdminKey(k)&&state.stage.handedOff)?"✎ Request correction":"📝 Note"; nb.textContent=has?base+" ✓":base;
   }, true);
   $("btn-flags-copy").addEventListener("click",fnCopy);
   $("btn-flags-csv").addEventListener("click",fnCSV);
@@ -1729,13 +1923,13 @@ function listen(el,b){
 // ---------- init ----------
 $("add-row").addEventListener("click",addRow);
 $("tab-walk").addEventListener("click",function(){setTab("walk");}); $("tab-table").addEventListener("click",function(){setTab("table");});
-$("bar-walk").addEventListener("click",function(){ setTab("walk"); $("sec-rows").scrollIntoView({behavior:"smooth"}); });
+$("bar-walk").addEventListener("click",function(){ setStage("inspect",true); setTab("walk"); $("sec-rows").scrollIntoView({behavior:"smooth"}); });
 $("btn-check").addEventListener("click",runCheck); $("bar-check").addEventListener("click",runCheck);
 $("btn-xlsx").addEventListener("click",exportXLSX); $("btn-csv").addEventListener("click",exportCSV);
 $("btn-rev").addEventListener("click",startRevision);
 $("btn-new").addEventListener("click",newProject);
 $("btn-del").addEventListener("click",removeProject);
-bindHeader(); bindRows(); bindWalk(); bindProject(); bindNotes();
+bindHeader(); bindRows(); bindWalk(); bindProject(); bindNotes(); bindStages();
 $("btn-top-new").addEventListener("click",function(){ if(isEmptyProject(state)){ projMsg("This project is already blank. Start filling it in."); $("sec-project").scrollIntoView(); return; } newProject(); $("sec-project").scrollIntoView(); });
 $("btn-clear").addEventListener("click",clearForm);
 if(!STORAGE_OK){ $("store-banner").style.display=""; $("saved").textContent="Not saving here"; }
@@ -1745,9 +1939,10 @@ setTab(state.tab==="table"?"table":"walk");
 if(canExport()){ renderResult({pass:true,problems:[]}); } else if(state.checked){ renderResult(null); }
 updateExportButtons();
 if(state.savedAt) $("saved").textContent="Saved on this device "+fmtTime(new Date(state.savedAt));
-renderPicker(); renderFlags();
+renderPicker(); renderFlags(); renderStage();
+if(curStage()==="table") setTab("table");
 $("nojs-banner").style.display="none";
-window.__L2 = {storageOk:STORAGE_OK, fnEntries:function(){return fnEntries();}, fnText:function(){return fnText();},state:function(){return JSON.parse(JSON.stringify(state));}, version:VERSION, spokenQty:spokenQty, hasSpeech:!!SR,
+window.__L2 = {storageOk:STORAGE_OK, stage:function(){return curStage();}, intakeMissing:function(){return intakeMissing();}, intakeStatus:function(){return intakeStatus();}, fnEntries:function(){return fnEntries();}, fnText:function(){return fnText();},state:function(){return JSON.parse(JSON.stringify(state));}, version:VERSION, spokenQty:spokenQty, hasSpeech:!!SR,
   projects:function(){return readIndex();}, pid:function(){return state.pid;}, cm24:cm24, cmSuggest:cmSuggest};
 })();
 </script>
