@@ -31,7 +31,7 @@ tr.hold td{background:#fff3c4}tr.cont td{background:#ece6f7}tr.opt td{background
 <header><h1>Delta Level 2 Scoping · Room-Walk v4 (TEST)</h1><div class="s">Merged single version (v1.7 features + room walk). Test link; v1.7 stays live until Ben approves. Does not touch JobTread. Rule: a new row starts only when the Action or Material changes. The same item in several rooms stays on one row; room detail lives in the room detail column, callout tags and photo pins.</div></header>
 <div id="nojob" class="banner hide"></div>
 <nav class="tabs"><button data-tab="job" class="cur">Job</button><button data-tab="walk">Walk &amp; table</button><button data-tab="vis">Photos &amp; pins</button></nav>
-<div class="bar"><button class="ok" id="b-xlsx">Export .xlsx</button><button class="ok" id="b-csv">Export CSV</button><button id="b-print">Print visuals</button><button id="b-vhtml">Download visuals page</button><button id="b-check">Check complete</button><button id="b-rev">Start revision</button><button id="b-save">Save project file</button><button id="b-share">Send project file</button><button id="b-tnotes" class="internal" title="Internal only: estimating aid, not a schedule commitment">Internal: estimating notes (time)</button><label style="align-self:center"><button id="b-open" type="button">Open project file</button><input id="f-open" type="file" accept=".json,application/json" class="hide"></label><details style="align-self:center"><summary class="hint">Training</summary><button id="b-sample">Load sample job</button></details><span id="saved" class="hint" style="align-self:center"></span></div>
+<div class="bar"><button class="ok" id="b-xlsx">Export .xlsx</button><button class="ok" id="b-csv">Export CSV</button><button id="b-print">Print visuals</button><button id="b-vhtml">Download visuals page</button><button id="b-check">Check complete</button><button id="b-rev">Start revision</button><button id="b-save">Save project file</button><button id="b-share">Send project file</button><button id="b-tnotes" class="internal" title="Internal only: estimating aid, not a schedule commitment">Internal: estimating notes (time)</button><label style="align-self:center"><button id="b-open" type="button">Open project file</button><input id="f-open" type="file" accept=".json,application/json,text/plain" class="hide"></label><details style="align-self:center"><summary class="hint">Training</summary><button id="b-sample">Load sample job</button></details><span id="saved" class="hint" style="align-self:center"></span></div>
 <div id="tab-job"><section><h2>Jobs on this phone</h2><div class="pick"><select id="p-pick"></select><button id="p-new">New job</button><button class="warn" id="p-del">Remove this job from this phone</button></div><p class="hint">Each job saves on this device on its own. Export or Save project file before removing one.</p></section>
 <section><h2>Job <span class="hint">(admin fills these before the walk)</span></h2><div class="jf">
 <div><div class="lbl">Job name</div><input id="j-name" data-j="name" placeholder="e.g. Ashurst"></div>
@@ -188,10 +188,44 @@ var STORE_OK=true;try{localStorage.setItem(K+":t","1");localStorage.removeItem(K
 function idxGet(){try{var o=JSON.parse(localStorage.getItem(K)||"null");if(o&&o.list)return o;}catch(e){}return {cur:null,list:[],v3:false};}
 function idxPut(o){try{localStorage.setItem(K,JSON.stringify(o));}catch(e){}}
 function pGet(id){try{return JSON.parse(localStorage.getItem(KP+id)||"null");}catch(e){return null;}}
-var IDX=idxGet(),S=null,V3IMPORT=null;
-if(!IDX.v3){IDX.v3=true;var o3=null;try{o3=JSON.parse(localStorage.getItem(K3)||"null");}catch(e){}
-  if(o3&&o3.entries&&(o3.entries.length||o3.rooms.length)){S=fix(o3);S.pid=newPid();S.v=4;S.rev=S.rev||1;V3IMPORT=S.photos.map(function(p){return p.id;});}}
-if(!S&&IDX.cur)S=pGet(IDX.cur);
+var IDX=idxGet(),S=null,PENDING=[];
+// ---- one-time import of every older version's saved jobs (same origin = same localStorage) ----
+var LEG_RW=[{k:"delta-roomwalk-test-v1",from:"room-walk v1 (old roomwalk-test)"},{k:"delta-roomwalk-test-v2",from:"room-walk v2",db:"delta-roomwalk-v2-img"},{k:"delta-roomwalk-test-v3",from:"room-walk v3",db:"delta-roomwalk-v3-img"}];
+var LEG_V17="delta-l2-v13-p:";
+function hsh(str){var h=5381;for(var i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return (h>>>0).toString(36)+"_"+str.length;}
+function v17Job(o,key){var h=o.header||{},b=blank(),fn=o.fnotes||{},R="Imported (v1.7)";b.pid=newPid();b.rev=o.version||1;
+  b.job.name=h.job||"";b.job.entity=h.entity||"";b.job.inspector=h.inspector||"";b.job.damage=h.kind==="damage"?"Yes":h.kind==="non-damage"?"No":"";
+  ["client","referral","address","claim"].forEach(function(k){b.job[k]=h[k]||"";});b.job.remote=h.capRemote||"";b.job.intplan=h.capInt||"";b.job.inspdate=h.idateA||h.idateT||"";b.job.reportref=h.insp||"";
+  b.sources=(h.sources||[]).filter(function(x){return x&&t(x.text);}).map(function(x){return {name:x.text,state:x.conf||""};});
+  b.rooms=[R];b.cur=R;var tr={};
+  (o.rows||[]).forEach(function(r){b.seq++;tr[r.trade||""]=1;var st=STATUSES.indexOf(r.status)>=0?r.status:"";
+    var notes=Object.keys(fn).filter(function(k){return k.indexOf("r:"+r.id+":")===0;}).map(function(k){var n=fn[k];return k.split(":")[2]+": "+(n.stuck?"[stuck] ":"")+(n.note||"");});
+    var fx="REVIEW: imported from v1.7 trade walk."+(t(r.location)?" Location: "+r.location+".":"")+(t(r.callout)?" Callout: "+r.callout+".":"")+(notes.length?" v1.7 field notes: "+notes.join(" | "):"");
+    b.entries.push({id:"e"+b.seq,room:R,trade:r.trade||"",action:r.action||"",material:r.material||"",qty:r.qty==null?"":String(r.qty),unit:r.unit||"",finish:r.finish||"",status:st,hold:st&&st!=="known"?(r.note||""):"",note:r.note||"",selection:r.selection||"",stuck:true,fnote:fx,tnote:"",callout:r.callout||"",location:r.location||"",v17:r});});
+  b.trades=Object.keys(tr).filter(function(x){return x;});
+  var jn=Object.keys(fn).filter(function(k){return k.indexOf("r:")!==0;}).map(function(k){var n=fn[k];return k+": "+(n.stuck?"[stuck] ":"")+(n.note||"");});
+  if(jn.length&&b.entries.length)b.entries[0].fnote+=" | Job-level v1.7 notes: "+jn.join(" | ");
+  b.legacy={from:"v1.7",key:key,header:h,fnotes:fn,prior:o.prior||[],stage:o.stage||null,walk:o.walk||null};return b;}
+function legacyJobs(get,keys){var out=[];
+  LEG_RW.forEach(function(L){var str=get(L.k);if(!str)return;var o=null;try{o=JSON.parse(str);}catch(e){return;}
+    if(!o||!o.entries||!(o.entries.length||(o.rooms||[]).length))return;var st=fix(JSON.parse(str));st.pid=newPid();st.v=4;st.rev=st.rev||1;st.imported={from:L.from,key:L.k};
+    out.push({src:L.k+"#"+hsh(str),from:L.from,st:st,db:L.db,ids:(st.photos||[]).map(function(p){return p.id;})});});
+  keys.filter(function(k){return k.indexOf(LEG_V17)===0;}).sort().forEach(function(k){var str=get(k),o=null;try{o=JSON.parse(str);}catch(e){return;}
+    if(!o||!o.header)return;var st=fix(v17Job(o,k));st.imported={from:"v1.7",key:k};out.push({src:k+"#"+hsh(str),from:"v1.7",st:st,ids:[]});});
+  return out;}
+function runImport(get,keys,imgs){IDX.imp=IDX.imp||{};var added=[];
+  legacyJobs(get,keys).forEach(function(J){if(IDX.imp[J.src])return;
+    try{localStorage.setItem(KP+J.st.pid,JSON.stringify(J.st));}catch(e){return;}
+    IDX.imp[J.src]={pid:J.st.pid,at:new Date().toISOString()};IDX.list.push({id:J.st.pid,name:J.st.job.name,number:J.st.job.number,at:new Date().toISOString(),from:J.from});added.push(J.st.pid);
+    if(J.ids.length)PENDING.push({db:J.db,pid:J.st.pid,ids:J.ids,mem:imgs&&imgs[J.db]});});
+  idxPut(IDX);return added;}
+function lsKeys(){var a=[];try{for(var i=0;i<localStorage.length;i++)a.push(localStorage.key(i));}catch(e){}return a;}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+// a v3 job already imported by the first v4 build is not imported twice
+if(IDX.v3&&!IDX.imp){IDX.imp={};var v3s=lsGet("delta-roomwalk-test-v3");if(v3s)IDX.imp["delta-roomwalk-test-v3#"+hsh(v3s)]={pid:null,at:"earlier v4 build"};}
+var ADDED=STORE_OK?runImport(lsGet,lsKeys()):[];IDX.v3=true;
+if(!IDX.cur&&ADDED.length){IDX.cur=ADDED[ADDED.length-1];}
+if(IDX.cur)S=pGet(IDX.cur);
 S=fix(S);
 var IMG={}; // photo id -> dataURL
 // ---- image store: IndexedDB (photos are too big for localStorage) ----
@@ -201,7 +235,10 @@ function ik(id){return S.pid+"/"+id;}
 function dbPut(id,v){if(!DB)return;try{DB.transaction("img","readwrite").objectStore("img").put(v,ik(id));}catch(e){}}
 function dbDel(id){if(!DB)return;try{DB.transaction("img","readwrite").objectStore("img").delete(ik(id));}catch(e){}}
 // v3 import: copy that page's photos from its own image store, once
-function v3Images(cb){if(!V3IMPORT||!V3IMPORT.length||!DB)return cb();try{var r=indexedDB.open("delta-roomwalk-v3-img",1);r.onupgradeneeded=function(){r.result.createObjectStore("img");};r.onsuccess=function(){var d=r.result,n=V3IMPORT.length;V3IMPORT.forEach(function(id){var q=d.transaction("img").objectStore("img").get(id);q.onsuccess=function(){if(q.result){IMG[id]=q.result;dbPut(id,q.result);}if(--n===0){V3IMPORT=null;cb();}};q.onerror=function(){if(--n===0)cb();};});};r.onerror=function(){cb();};}catch(e){cb();}}
+function v3Images(cb){var list=PENDING.splice(0);if(!list.length||!DB)return cb();var n=list.length;function done(){if(--n===0)cb();}
+  list.forEach(function(P){var m=P.ids.length;if(!m)return done();function one(){if(--m===0)done();}
+    if(P.mem){P.ids.forEach(function(id){var v=P.mem[id];if(v){try{DB.transaction("img","readwrite").objectStore("img").put(v,P.pid+"/"+id);}catch(e){}if(P.pid===S.pid)IMG[id]=v;}one();});return;}
+    try{var r=indexedDB.open(P.db,1);r.onupgradeneeded=function(){r.result.createObjectStore("img");};r.onsuccess=function(){var d=r.result;P.ids.forEach(function(id){var q;try{q=d.transaction("img").objectStore("img").get(id);}catch(e){return one();}q.onsuccess=function(){if(q.result){try{DB.transaction("img","readwrite").objectStore("img").put(q.result,P.pid+"/"+id);}catch(e){}if(P.pid===S.pid)IMG[id]=q.result;}one();};q.onerror=one;});};r.onerror=function(){m=1;one();};}catch(e){m=1;one();}});}
 function dbLoadAll(cb){if(!DB)return cb();var n=S.photos.length;if(!n)return cb();S.photos.forEach(function(p){var q=DB.transaction("img").objectStore("img").get(ik(p.id));q.onsuccess=function(){if(q.result)IMG[p.id]=q.result;if(--n===0)cb();};q.onerror=function(){if(--n===0)cb();};});}
 function save(){try{localStorage.setItem(KP+S.pid,JSON.stringify(S));IDX.cur=S.pid;var L=IDX.list.filter(function(x){return x.id===S.pid;})[0];if(!L){L={id:S.pid};IDX.list.push(L);}L.name=S.job.name;L.number=S.job.number;L.at=new Date().toISOString();idxPut(IDX);$("saved").textContent="Saved on this device "+new Date().toLocaleTimeString();}catch(e){$("saved").innerHTML='<span class="flag">Couldn\'t save on this device. Save project file now.</span>';$("store-banner").classList.remove("hide");}}
 function renderPick(){$("p-pick").innerHTML=IDX.list.slice().sort(function(a,b){return (b.at||"").localeCompare(a.at||"");}).map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===S.pid?' selected':'')+'>'+esc(([x.number,x.name].filter(Boolean).join(" ")||"(unnamed job)"))+'</option>';}).join("");}
@@ -550,7 +587,7 @@ $("b-vhtml").onclick=function(){download(fileBase()+"_Visuals.html","text/html",
 $("b-print").onclick=function(){var w=window.open("","_blank");if(!w){alert("Allow pop-ups, or use Download visuals page.");return;}w.document.write(visualsHtml());w.document.close();setTimeout(function(){w.focus();w.print();},600);};
 $("b-save").onclick=function(){download(fileBase()+"_project.json","application/json",projectJson());};
 $("b-open").onclick=function(){$("f-open").click();};
-$("f-open").onchange=function(){var f=this.files[0],inp=this;if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.kind!=="delta-roomwalk-project")throw 0;loadProject(o);}catch(e){alert("That isn't a room-walk project file.");}inp.value="";};fr.readAsText(f);};
+$("f-open").onchange=function(){var f=this.files[0],inp=this;if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.kind==="delta-scope-backup"){var ks=o.keys||{};var add=runImport(function(k){return ks[k]==null?null:ks[k];},Object.keys(ks),o.images||{});if(add.length){save();switchTo(add[add.length-1]);v3Images(function(){all();});}alert(add.length?"Imported "+add.length+" job(s) from the backup. Pick them under Job.":"Nothing new in that backup: those jobs are already on this device.");inp.value="";return;}if(o.kind!=="delta-roomwalk-project")throw 0;loadProject(o);}catch(e){alert("That isn't a room-walk project file.");}inp.value="";};fr.readAsText(f);};
 window.__rw={micTap:micTap,checkList:checkList,sweep:sweep,changesRows:changesRows,tnotesCsv:tnotesCsv,spokenQty:spokenQty,idx:function(){return IDX;},switchTo:switchTo,LKQ_PRE:LKQ_PRE,near:near,fileBase:fileBase,capSheet:capSheet,version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);if(!st.pid)S.pid=newPid();save();all();},same:same,render:all,setTab:setTab};
 $("nojs-banner").style.display="none";
 if(!STORE_OK)$("store-banner").classList.remove("hide");

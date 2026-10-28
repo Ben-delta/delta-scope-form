@@ -1,0 +1,365 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delta Room-Walk Rollup TEST v2</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;margin:0;background:#f4f6f9;color:#1d2733;font-size:14px}
+header{background:#1f3a5f;color:#fff;padding:10px 16px}header h1{margin:0;font-size:18px}header .s{font-size:12px;opacity:.85}
+.bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;background:#e3e9f2}
+nav.tabs{display:flex;gap:4px;padding:6px 16px 0;background:#e3e9f2;flex-wrap:wrap}nav.tabs button{border-radius:6px 6px 0 0}nav.tabs button.cur{background:#1f3a5f;color:#fff}
+button{padding:7px 11px;border:1px solid #8a96a8;border-radius:5px;background:#fff;cursor:pointer;font-size:14px}button.ok{background:#2d6a3e;color:#fff;border-color:#2d6a3e}button.warn{background:#9b2c2c;color:#fff;border-color:#9b2c2c}
+section{background:#fff;margin:10px 16px;padding:10px 12px;border-radius:8px;box-shadow:0 1px 2px #0002}
+h2{font-size:15px;margin:0 0 8px}.chips label{display:inline-block;margin:2px 6px 2px 0;white-space:nowrap}
+.cols{display:grid;grid-template-columns:minmax(340px,1fr) minmax(460px,1.4fr);gap:0}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.rooms button{margin:2px}.rooms button.cur{background:#1f3a5f;color:#fff}
+.ent{border:1px solid #cfd6e0;border-radius:6px;padding:6px;margin:6px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ent .tr{grid-column:1/-1;font-weight:600;display:flex;justify-content:space-between}.ent .w2{grid-column:span 2}.ent .w4{grid-column:1/-1}
+.ent input,.ent select,.jf input,.jf select{width:100%;box-sizing:border-box;padding:5px;font-size:16px}
+.jf{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:720px}@media(max-width:600px){.jf{grid-template-columns:1fr}}
+.lbl{font-size:11px;color:#556}
+table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #cfd6e0;padding:3px 5px;vertical-align:top;text-align:left}th{background:#d9e1ec}
+tr.hold td{background:#fff3c4}td.mm{background:#f8d0d0;color:#7a0000;font-weight:700}
+.flag{color:#7a0000;font-weight:700}.hint{font-size:12px;color:#556}.tblwrap{overflow-x:auto}
+.ph{border:1px solid #cfd6e0;border-radius:6px;padding:6px;margin:8px 0}
+.stage{position:relative;display:inline-block;max-width:100%;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.stage img{display:block;max-width:100%;height:auto}
+.pin{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#c0392b;color:#fff;font:700 13px/26px system-ui,Arial;text-align:center;border:2px solid #fff;box-shadow:0 1px 3px #000a;pointer-events:none}
+.pinrow{display:flex;gap:6px;align-items:center;margin:3px 0}.pinrow select{flex:1;font-size:15px;padding:4px;min-width:0}
+.hide{display:none}
+</style></head><body>
+<header><h1>Delta Room-Walk → Level 2 Rollup · TEST v2</h1><div class="s">Test page only. v1.7 stays the live form. Does not touch JobTread. Rule: a new row starts only when the Action or Material changes (or a truly different item). The same item in several rooms stays on one row; room detail lives in the room detail column, callout tags and photo pins.</div></header>
+<nav class="tabs"><button data-tab="job" class="cur">Job</button><button data-tab="walk">Walk &amp; table</button><button data-tab="vis">Photos &amp; pins</button></nav>
+<div class="bar"><button class="ok" id="b-xlsx">Export .xlsx</button><button class="ok" id="b-csv">Export CSV</button><button id="b-print">Print visuals</button><button id="b-vhtml">Download visuals page</button><button id="b-save">Save project file</button><label style="align-self:center"><button id="b-open" type="button">Open project file</button><input id="f-open" type="file" accept=".json,application/json" class="hide"></label><button id="b-sample">Load sample</button><button class="warn" id="b-reset">Reset</button><span id="saved" class="hint" style="align-self:center"></span></div>
+<div id="tab-job"><section><h2>Job</h2><div class="jf">
+<div><div class="lbl">Job name</div><input id="j-name" placeholder="e.g. Ashurst 26-037"></div>
+<div><div class="lbl">Entity</div><select id="j-entity"><option value="">Entity…</option><option>Delta Dry</option><option>McMurray Contracting</option><option>DCS</option><option>Delta Solutions</option></select></div>
+<div><div class="lbl">Inspector</div><input id="j-insp" placeholder="e.g. Jason"></div>
+<div><div class="lbl">Landing spot (where this scope goes next)</div><input id="j-land" placeholder="e.g. JobTread job › Files › Scope"></div>
+</div><p class="hint" id="j-miss"></p></section></div>
+<div id="tab-walk" class="hide">
+<section><h2>1 · Setup</h2>
+<div class="lbl">Trades on this job (v1.3 code list)</div><div class="chips" id="trades"></div>
+<div class="lbl" style="margin-top:8px">Rooms / locations</div>
+<input id="room-in" placeholder="e.g. Kitchen" style="padding:5px;font-size:16px"><button id="b-room">Add room</button>
+<button data-elev="Front">+ Exterior Front</button><button data-elev="Rear">+ Exterior Rear</button><button data-elev="Left">+ Exterior Left</button><button data-elev="Right">+ Exterior Right</button>
+<div id="roomlist" class="hint" style="margin-top:4px"></div></section>
+<div class="cols">
+<section><h2>2 · Walk (room by room)</h2><div class="rooms" id="rooms"></div><div id="walk"></div></section>
+<section><h2>3 · Rolled-up Level 2 table (JobTread line items)</h2><div id="sum" class="hint"></div><div class="tblwrap" id="table"></div></section>
+</div></div>
+<div id="tab-vis" class="hide"><section><h2>Photos &amp; pins</h2>
+<p class="hint">Pick a room, add a photo or a photo of your sketch, then tap the photo to drop a numbered pin. Tie each pin to an entry; the pin shows up as a callout tag (e.g. V1-2) on that Level 2 row and in the export.</p>
+<div class="rooms" id="vrooms"></div>
+<div style="margin:6px 0"><button id="b-addph" type="button">+ Add photo / sketch</button><input id="f-ph" type="file" accept="image/*" class="hide"> <span class="hint" id="ph-msg"></span></div>
+<div id="photos"></div></section></div>
+<script>
+(function(){"use strict";
+// ---- xlsx writer copied verbatim from v1.3 (styles wrapped as xlsxStyles) ----
+var CRC_T=(function(){var t=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=CRC_T[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zip(files){
+  var enc=new TextEncoder(), parts=[], central=[], off=0, d=new Date();
+  var dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF, dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  files.forEach(function(f){
+    var name=enc.encode(f.name), data=enc.encode(f.data), crc=crc32(data);
+    var lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer),name,data);
+    var ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,0,true);ch.setUint16(12,dt,true);ch.setUint16(14,dd,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,name.length,true);
+    ch.setUint16(30,0,true);ch.setUint16(32,0,true);ch.setUint16(34,0,true);ch.setUint16(36,0,true);ch.setUint32(38,0,true);ch.setUint32(42,off,true);
+    central.push(new Uint8Array(ch.buffer),name);
+    off+=30+name.length+data.length;
+  });
+  var csize=central.reduce(function(a,b){return a+b.length;},0);
+  var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);e.setUint16(20,0,true);
+  var all=parts.concat(central,[new Uint8Array(e.buffer)]), total=all.reduce(function(a,b){return a+b.length;},0), out=new Uint8Array(total), p=0;
+  all.forEach(function(a){out.set(a,p);p+=a.length;});
+  return out;
+}
+function xesc(s){return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function colL(i){var s="";i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
+function cell(ref,v,style){
+  var s=style?' s="'+style+'"':'';
+  if(v===null||v===undefined||v==="") return style?'<c r="'+ref+'"'+s+'/>':'';
+  if(typeof v==="number" && isFinite(v)) return '<c r="'+ref+'"'+s+'><v>'+v+'</v></c>';
+  return '<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>';
+}
+// rows: array of {cells:[], style:n or [per-cell]}
+function sheetXml(rows, opt){
+  opt=opt||{};
+  var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  var maxC=rows.reduce(function(a,r){return Math.max(a,r.cells.length);},1);
+  x+='<dimension ref="A1:'+colL(maxC-1)+Math.max(rows.length,1)+'"/>';
+  x+='<sheetViews><sheetView workbookViewId="0"'+(opt.tab0?' tabSelected="1"':'')+'>'+(opt.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>':'')+'</sheetView></sheetViews>';
+  x+='<sheetFormatPr defaultRowHeight="15"/>';
+  if(opt.widths){ x+='<cols>'+opt.widths.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}).join("")+'</cols>'; }
+  x+='<sheetData>';
+  rows.forEach(function(r,ri){
+    x+='<row r="'+(ri+1)+'">';
+    r.cells.forEach(function(v,ci){ var st=Array.isArray(r.style)?r.style[ci]:r.style; x+=cell(colL(ci)+(ri+1),v,st||0); });
+    x+='</row>';
+  });
+  x+='</sheetData>';
+  if(opt.protect) x+='<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" formatColumns="0" formatRows="0" sort="0" autoFilter="0"/>';
+  if(opt.filter) x+='<autoFilter ref="'+opt.filter+'"/>';
+  if(opt.dv) x+='<dataValidations count="'+opt.dv.length+'">'+opt.dv.map(function(d){return '<dataValidation type="list" allowBlank="1" showErrorMessage="1" sqref="'+d.sqref+'"><formula1>"'+xesc(d.list)+'"</formula1></dataValidation>';}).join("")+'</dataValidations>';
+  x+='<pageMargins left="0.5" right="0.5" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>';
+  if(opt.landscape) x+='<pageSetup orientation="landscape"/>';
+  x+='</worksheet>';
+  return x;
+}
+function xlsxStyles(){
+  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+   '<fonts count="3"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="14"/><name val="Calibri"/><family val="2"/></font></fonts>'+
+   '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E1EC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF3C4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+   '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF8A96A8"/></bottom><diagonal/></border></borders>'+
+   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+   '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+   '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs>'+
+   '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  return styles; }
+var CODES = [["GC","General Conditions / GC"],["FRAM","Framing"],["MECH","Mechanical / HVAC"],["PLUMB","Plumbing"],["ELEC","Electrical"],["INSUL","Insulation"],["DRY","Drywall"],["TRIM","Trim / millwork"],["TILE","Tile"],["FLR","Flooring (non-tile)"],["DOOR","Doors"],["PNT","Paint"],["DEMO","Demolition"],["ROOF","Roofing"],["EXT","Exterior / siding / openings"],["CAB","Cabinets"],["CLN","Cleaning / contents"],["MIT","Mitigation / dry-out"]];
+var CODE_NAME={},CODE_ORD={};CODES.forEach(function(c,i){CODE_NAME[c[0]]=c[1];CODE_ORD[c[0]]=i;});
+var ACTIONS=["remove only","install only","remove and replace","replace","detach & reset","n/a"];
+var STATUSES=["known","assumed","hold"];
+var UNITS=["SF","LF","SY","EA","LS","Set","HR"];
+var ENTITIES=["Delta Dry","McMurray Contracting","DCS","Delta Solutions"];
+var TABLE_COLS=["Callout ID(s)","Trade / code","Cost Group","Action","Location","Qty","Unit","Material","Finish","Status","Note","Selection","Room detail (room · qty · finish)","Callout tags (pins)"];
+var VERSION="roomwalk-test-v2";
+var K="delta-roomwalk-test-v2";
+function $(id){return document.getElementById(id);}
+function t(s){return (s==null?"":String(s)).trim();}
+function isNum(s){return /^\d+(\.\d+)?$/.test(t(s).replace(/,/g,""));}
+function num(s){return parseFloat(t(s).replace(/,/g,""));}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function blank(){return {v:2,job:{name:"",entity:"",inspector:"",landing:""},trades:[],rooms:[],entries:[],photos:[],cur:null,vcur:null,seq:0,pseq:0};}
+function fix(s){var b=blank();s=s||{};Object.keys(b).forEach(function(k){if(s[k]===undefined)s[k]=b[k];});return s;}
+var S; try{S=JSON.parse(localStorage.getItem(K)||"null");}catch(e){} S=fix(S);
+var IMG={}; // photo id -> dataURL
+// ---- image store: IndexedDB (photos are too big for localStorage) ----
+var DB=null;
+function dbOpen(cb){try{var r=indexedDB.open("delta-roomwalk-v2-img",1);r.onupgradeneeded=function(){r.result.createObjectStore("img");};r.onsuccess=function(){DB=r.result;cb();};r.onerror=function(){cb();};}catch(e){cb();}}
+function dbPut(id,v){if(!DB)return;try{DB.transaction("img","readwrite").objectStore("img").put(v,id);}catch(e){}}
+function dbDel(id){if(!DB)return;try{DB.transaction("img","readwrite").objectStore("img").delete(id);}catch(e){}}
+function dbLoadAll(cb){if(!DB)return cb();var n=S.photos.length;if(!n)return cb();S.photos.forEach(function(p){var q=DB.transaction("img").objectStore("img").get(p.id);q.onsuccess=function(){if(q.result)IMG[p.id]=q.result;if(--n===0)cb();};q.onerror=function(){if(--n===0)cb();};});}
+function save(){try{localStorage.setItem(K,JSON.stringify(S));$("saved").textContent="Saved on this device "+new Date().toLocaleTimeString();}catch(e){$("saved").textContent="Couldn't save";}}
+function newEnt(room,trade){S.seq++;return {id:"e"+S.seq,room:room,trade:trade,action:"",material:"",qty:"",unit:"",finish:"",status:"",hold:"",note:""};}
+function opts(list,v,ph){return '<option value="">'+ph+'</option>'+list.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join("");}
+// ---- name matching: case, spaces, punctuation, small typos ----
+function norm(s){return t(s).toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9\/]/g,"");}
+function lev(a,b){if(a===b)return 0;var m=a.length,n=b.length;if(Math.abs(m-n)>2)return 9;var p=[],i,j;for(j=0;j<=n;j++)p[j]=j;for(i=1;i<=m;i++){var c=[i];for(j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c;}return p[n];}
+// same name if equal after norm; or a 1-letter slip on names 6+ long; or 2 slips on 10+ long. Numbers must match exactly.
+function same(a,b){a=norm(a);b=norm(b);if(a===b)return true;if(!a||!b)return false;if(a.replace(/[^0-9\/]/g,"")!==b.replace(/[^0-9\/]/g,""))return false;var L=Math.min(a.length,b.length),d=lev(a,b);return (L>=6&&d<=1)||(L>=10&&d<=2);}
+function normAct(a){return t(a).toLowerCase();}
+function entryById(id){for(var i=0;i<S.entries.length;i++)if(S.entries[i].id===id)return S.entries[i];return null;}
+function photoNo(p){return S.photos.indexOf(p)+1;}
+function renderJob(){var j=S.job;$("j-name").value=j.name;$("j-entity").value=j.entity;$("j-insp").value=j.inspector;$("j-land").value=j.landing;var m=jobMissing();$("j-miss").innerHTML=m.length?'<span class="flag">Missing: '+esc(m.join(", "))+'</span>':'Job info complete.';}
+function jobMissing(){var j=S.job,m=[];if(!t(j.name))m.push("Job name");if(!t(j.entity))m.push("Entity");if(!t(j.inspector))m.push("Inspector");if(!t(j.landing))m.push("Landing spot");return m;}
+function renderSetup(){
+  $("trades").innerHTML=CODES.map(function(c){return '<label><input type="checkbox" data-tr="'+c[0]+'"'+(S.trades.indexOf(c[0])>=0?' checked':'')+'> '+c[0]+' · '+esc(c[1])+'</label>';}).join("");
+  $("roomlist").innerHTML=S.rooms.length?S.rooms.map(function(r){return esc(r)+' <a href="#" data-delroom="'+esc(r)+'">×</a>';}).join(" · "):"No rooms yet.";
+}
+function actOpts(trade,v){return opts(ACTIONS.filter(function(a){return a!=="n/a"||trade==="GC";}),v,"Action…");}
+function renderWalk(){
+  $("rooms").innerHTML=S.rooms.map(function(r){var n=S.entries.filter(function(e){return e.room===r;}).length;return '<button data-room="'+esc(r)+'"'+(r===S.cur?' class="cur"':'')+'>'+esc(r)+(n?' ('+n+')':'')+'</button>';}).join("");
+  var w=$("walk");
+  if(!S.cur||S.rooms.indexOf(S.cur)<0){w.innerHTML='<p class="hint">Pick a room above. You will see only the trades picked in Setup.</p>';return;}
+  var h='',R=rollup();
+  S.trades.slice().sort(function(a,b){return CODE_ORD[a]-CODE_ORD[b];}).forEach(function(tr){
+    var es=S.entries.filter(function(e){return e.room===S.cur&&e.trade===tr;});
+    h+='<div style="margin-top:8px"><b>'+tr+' · '+esc(CODE_NAME[tr])+'</b> <button data-add="'+tr+'">+ entry</button>'+(es.length?'':' <span class="hint">nothing in this room</span>')+'</div>';
+    es.forEach(function(e){
+      h+='<div class="ent" data-id="'+e.id+'"><div class="tr"><span>'+esc(S.cur)+' · '+tr+(R.byEntry[e.id]?' · row '+R.byEntry[e.id]:'')+'</span><a href="#" data-del="'+e.id+'">remove entry</a></div>'+
+      '<div class="w2"><div class="lbl">Action</div><select data-f="action">'+actOpts(tr,e.action)+'</select></div>'+
+      '<div class="w2"><div class="lbl">Material (one per entry)</div><input data-f="material" value="'+esc(e.material)+'"></div>'+
+      '<div><div class="lbl">Qty</div><input data-f="qty" inputmode="decimal" value="'+esc(e.qty)+'"></div>'+
+      '<div><div class="lbl">Unit</div><select data-f="unit">'+opts(UNITS,e.unit,"Unit…")+'</select></div>'+
+      '<div class="w2"><div class="lbl">Finish</div><input data-f="finish" value="'+esc(e.finish)+'"></div>'+
+      '<div><div class="lbl">Status</div><select data-f="status">'+opts(STATUSES,e.status,"Status…")+'</select></div>'+
+      '<div class="w2"'+(e.status==="hold"?'':' style="visibility:hidden"')+'><div class="lbl">Hold reason (required)</div><input data-f="hold" value="'+esc(e.hold)+'"></div><div></div>'+
+      '<div class="w4"><div class="lbl">Note</div><input data-f="note" value="'+esc(e.note)+'"></div></div>';
+    });
+  });
+  if(!S.trades.length) h='<p class="hint">No trades picked in Setup yet.</p>';
+  w.innerHTML=h;
+}
+function fmtN(n){return Math.round(n*1000)/1000;}
+function rollup(){
+  var groups=[],empty=[];
+  S.entries.forEach(function(e){
+    if(!e.action&&!t(e.material)&&!t(e.qty)&&!t(e.finish)&&!t(e.note)){empty.push(e);return;} // untouched blank entry
+    var a=normAct(e.action),g=null;
+    for(var i=0;i<groups.length;i++){var G=groups[i];if(G.trade===e.trade&&G.action===a&&(t(e.material)?same(G.material,e.material):!t(G.material))){g=G;break;}}
+    if(!g){g={trade:e.trade,action:a,material:t(e.material),ents:[],names:[]};groups.push(g);}
+    g.ents.push(e); if(t(e.material)&&g.names.indexOf(t(e.material))<0)g.names.push(t(e.material));
+  });
+  groups.sort(function(a,b){return CODE_ORD[a.trade]-CODE_ORD[b.trade];});
+  var byEntry={},pinsByEntry={};
+  S.photos.forEach(function(p){p.pins.forEach(function(pn){if(pn.entry){(pinsByEntry[pn.entry]=pinsByEntry[pn.entry]||[]).push("V"+photoNo(p)+"-"+pn.n);}});});
+  var rows=groups.map(function(g,i){
+    var id=String(i+1);g.ents.forEach(function(e){byEntry[e.id]=id;});
+    var rooms=[];g.ents.forEach(function(e){if(rooms.indexOf(e.room)<0)rooms.push(e.room);});
+    rooms.sort(function(a,b){return S.rooms.indexOf(a)-S.rooms.indexOf(b);});
+    var units={},blankQ=false,nonNum=false,flags=[],info=[];
+    if(!g.action)flags.push("ACTION MISSING ("+g.ents.map(function(e){return e.room;}).join(", ")+")");
+    if(!g.material)flags.push("MATERIAL MISSING");
+    g.ents.forEach(function(e){ if(!t(e.qty)){blankQ=true;return;} if(!isNum(e.qty))nonNum=true; var u=e.unit||"(no unit)"; units[u]=(units[u]||0)+(isNum(e.qty)?num(e.qty):0); });
+    var uk=Object.keys(units),qty="",unit="";
+    if(uk.length===1&&!nonNum){qty=fmtN(units[uk[0]]);unit=uk[0]==="(no unit)"?"":uk[0]; if(uk[0]==="(no unit)")flags.push("UNIT MISSING");}
+    else if(uk.length>1){qty=uk.map(function(u){return fmtN(units[u])+" "+u;}).join(" + ");unit="MIXED";flags.push("UNIT MISMATCH: "+g.ents.map(function(e){return e.room+" "+t(e.qty)+" "+(e.unit||"?");}).join(", ")+" — not summed");}
+    if(nonNum)flags.push("NON-NUMBER QTY");
+    if(blankQ)flags.push("QTY BLANK in "+g.ents.filter(function(e){return !t(e.qty);}).map(function(e){return e.room;}).join(", "));
+    if(g.names.length>1)info.push("names merged: "+g.names.join(" / "));
+    // finish: group spelling variants; never copy a finish onto a room that left it blank
+    var fv=[],withF=[],noF=[];
+    g.ents.forEach(function(e){var f=t(e.finish);if(!f){if(noF.indexOf(e.room)<0)noF.push(e.room);return;}if(withF.indexOf(e.room)<0)withF.push(e.room);for(var k=0;k<fv.length;k++)if(same(fv[k].v,f)){if(fv[k].rooms.indexOf(e.room)<0)fv[k].rooms.push(e.room);if(fv[k].all.indexOf(f)<0)fv[k].all.push(f);return;}fv.push({v:f,rooms:[e.room],all:[f]});});
+    noF=noF.filter(function(r){return withF.indexOf(r)<0;});
+    var finish="";
+    if(fv.length===1&&!noF.length)finish=fv[0].v;
+    else if(fv.length){finish=fv.map(function(x){return x.rooms.join(", ")+": "+x.v;}).concat(noF.length?[noF.join(", ")+": (blank)"]:[]).join("; ");}
+    if(fv.length>1)flags.push("FINISH DIFFERS BY ROOM");
+    if(fv.length&&noF.length)flags.push("FINISH BLANK in "+noF.join(", ")+" (not filled from other room)");
+    fv.forEach(function(x){if(x.all.length>1)info.push("finish spellings merged: "+x.all.join(" / "));});
+    var st=g.ents.some(function(e){return e.status==="hold";})?"hold":g.ents.some(function(e){return e.status==="assumed";})?"assumed":g.ents.every(function(e){return e.status==="known";})?"known":"";
+    if(!st)flags.push("STATUS MISSING");
+    var notes=[];
+    g.ents.forEach(function(e){ if(e.status==="hold") notes.push("HOLD ("+e.room+"): "+(t(e.hold)||"reason missing")); });
+    g.ents.forEach(function(e){ if(t(e.note)) notes.push(e.room+": "+t(e.note)); });
+    var noteTxt=(flags.length?"⚠ "+flags.join("; ")+(notes.length?" | ":""):"")+notes.join("; ")+(info.length?(flags.length||notes.length?" | ":"")+"ℹ "+info.join("; "):"");
+    var detail=g.ents.map(function(e){return e.room+" · "+(t(e.qty)||"?")+" "+(e.unit||"")+(t(e.finish)?" · "+t(e.finish):"")+(t(e.material)!==g.material&&t(e.material)?" · ("+t(e.material)+")":"");}).join("; ");
+    var tags=[];g.ents.forEach(function(e){(pinsByEntry[e.id]||[]).forEach(function(x){tags.push(x+" ("+e.room+")");});});
+    return {callout:id,trade:g.trade,action:g.action,location:rooms.join("; "),qty:qty,unit:unit,material:g.material,finish:finish,status:st,note:noteTxt,selection:"",detail:detail,tags:tags.join("; "),flags:flags,n:g.ents.length,ents:g.ents.map(function(e){return e.id;})};
+  });
+  return {rows:rows,empty:empty,byEntry:byEntry};
+}
+function tableRows(rows){return rows.map(function(r){return [r.callout,r.trade,CODE_NAME[r.trade]||"",r.action,r.location,r.qty,r.unit,r.material,r.finish,r.status,r.note,r.selection,r.detail,r.tags];});}
+function renderTable(){
+  var R=rollup(),rows=R.rows,used=S.entries.length-R.empty.length;
+  var mm=rows.filter(function(r){return r.unit==="MIXED";}).length,hold=rows.filter(function(r){return r.status==="hold";}).length,fl=rows.filter(function(r){return r.flags.length;}).length;
+  $("sum").innerHTML='<b>'+rows.length+'</b> rows from <b>'+used+'</b> room entries'+(R.empty.length?' ('+R.empty.length+' empty entries skipped)':'')+' · holds: '+hold+' · <span class="'+(fl?'flag':'')+'">rows with ⚠ flags: '+fl+'</span> · <span class="'+(mm?'flag':'')+'">unit mismatches: '+mm+'</span><br>Rows group by Trade + Action + Material (case, spacing, punctuation and small typos ignored). Rooms never add rows; an entry with a blank Action stays in the table with a flag.';
+  $("table").innerHTML='<table id="rt"><thead><tr>'+TABLE_COLS.map(function(c){return '<th>'+esc(c)+'</th>';}).join("")+'</tr></thead><tbody>'+
+    rows.map(function(r){var c=tableRows([r])[0];return '<tr class="'+(r.status==="hold"?'hold':'')+'" data-flags="'+esc(r.flags.join("|"))+'">'+c.map(function(v,i){return '<td'+((i===5||i===6)&&r.unit==="MIXED"?' class="mm"':'')+'>'+esc(v)+'</td>';}).join("")+'</tr>';}).join("")+'</tbody></table>';
+}
+// ---- photos & pins ----
+function entryLabel(e,R){return (R.byEntry[e.id]?"#"+R.byEntry[e.id]+" · ":"")+e.trade+" · "+(e.action||"(no action)")+" · "+(t(e.material)||"(no material)");}
+function renderVis(){
+  var rs=S.rooms.slice();
+  $("vrooms").innerHTML=rs.map(function(r){var n=S.photos.filter(function(p){return p.room===r;}).length;return '<button data-vroom="'+esc(r)+'"'+(r===S.vcur?' class="cur"':'')+'>'+esc(r)+(n?' ('+n+')':'')+'</button>';}).join("")||'<span class="hint">Add rooms on the Walk tab first.</span>';
+  $("b-addph").disabled=!S.vcur;
+  var R=rollup(),h='';
+  S.photos.filter(function(p){return p.room===S.vcur;}).forEach(function(p){
+    var ents=S.entries.filter(function(e){return e.room===p.room;}),others=S.entries.filter(function(e){return e.room!==p.room;});
+    h+='<div class="ph" data-pid="'+p.id+'"><div style="display:flex;justify-content:space-between"><b>V'+photoNo(p)+' · '+esc(p.room)+' · '+esc(p.name||"photo")+'</b><a href="#" data-delph="'+p.id+'">remove photo</a></div>'+
+      '<div class="stage" data-stage="'+p.id+'">'+(IMG[p.id]?'<img alt="" src="'+IMG[p.id]+'">':'<div class="hint">(image not on this device)</div>')+
+      p.pins.map(function(pn){return '<span class="pin" style="left:'+(pn.x*100)+'%;top:'+(pn.y*100)+'%">'+pn.n+'</span>';}).join("")+'</div>'+
+      '<div class="hint">Tap the photo to add pin '+(p.pins.length+1)+'.</div>'+
+      p.pins.map(function(pn){var sel='<option value="">Tie pin to entry…</option>'+ents.map(function(e){return '<option value="'+e.id+'"'+(pn.entry===e.id?' selected':'')+'>'+esc(entryLabel(e,R))+'</option>';}).join("")+(others.length?'<optgroup label="Other rooms">'+others.map(function(e){return '<option value="'+e.id+'"'+(pn.entry===e.id?' selected':'')+'>'+esc(e.room+" · "+entryLabel(e,R))+'</option>';}).join("")+'</optgroup>':'');
+        return '<div class="pinrow"><b>'+pn.n+'</b><select data-pin="'+p.id+'|'+pn.n+'">'+sel+'</select><a href="#" data-delpin="'+p.id+'|'+pn.n+'">×</a></div>';}).join("")+'</div>';
+  });
+  $("photos").innerHTML=h||(S.vcur?'<p class="hint">No photos for '+esc(S.vcur)+' yet.</p>':'<p class="hint">Pick a room.</p>');
+}
+function shrink(file,cb){var fr=new FileReader();fr.onload=function(){var im=new Image();im.onload=function(){var M=1600,w=im.naturalWidth,h=im.naturalHeight,s=Math.min(1,M/Math.max(w,h));var c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);cb(c.toDataURL("image/jpeg",0.8),c.width,c.height);};im.onerror=function(){cb(null);};im.src=fr.result;};fr.readAsDataURL(file);}
+function addPhoto(room,name,data,w,h){S.pseq++;var p={id:"p"+S.pseq,room:room,name:name,w:w,h:h,pins:[]};S.photos.push(p);IMG[p.id]=data;dbPut(p.id,data);save();return p;}
+function addPin(pid,x,y,entry){var p=S.photos.filter(function(q){return q.id===pid;})[0];if(!p)return null;var n=p.pins.reduce(function(a,b){return Math.max(a,b.n);},0)+1;var pn={n:n,x:Math.round(x*1000)/1000,y:Math.round(y*1000)/1000,entry:entry||""};p.pins.push(pn);save();return pn;}
+function visRows(){var R=rollup(),rowById={};R.rows.forEach(function(r){rowById[r.callout]=r;});var out=[];
+  S.photos.forEach(function(p){p.pins.forEach(function(pn){var e=entryById(pn.entry),cid=e?R.byEntry[e.id]:"",r=cid?rowById[cid]:null;
+    out.push({photo:"V"+photoNo(p),file:p.name||"",proom:p.room,pin:pn.n,tag:"V"+photoNo(p)+"-"+pn.n,callout:cid||"(not tied)",row:r?(r.trade+" · "+(r.action||"(no action)")+" · "+r.material):"",room:e?e.room:"",entry:e?(t(e.qty)+" "+e.unit+" "+t(e.material)).trim():"",x:pn.x,y:pn.y});});});return out;}
+function visualsHtml(){var j=S.job,V=visRows(),R=rollup();
+  var h='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visuals '+esc(j.name)+'</title><style>body{font-family:system-ui,Arial,sans-serif;margin:16px;color:#1d2733}h1{font-size:18px;margin:0}.m{font-size:12px;color:#556;margin-bottom:10px}.pg{page-break-inside:avoid;break-inside:avoid;margin:0 0 18px}.st{position:relative;display:inline-block;max-width:100%}.st img{display:block;max-width:100%;max-height:60vh}.pin{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:#c0392b;color:#fff;font:700 12px/24px Arial;text-align:center;border:2px solid #fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{border-collapse:collapse;font-size:12px;width:100%;margin-top:6px}td,th{border:1px solid #bbb;padding:3px 5px;text-align:left}th{background:#d9e1ec}</style></head><body>';
+  h+='<h1>Room-walk visuals · '+esc(j.name||"(no job name)")+'</h1><div class="m">'+esc([j.entity,j.inspector&&("Inspector: "+j.inspector),j.landing&&("Landing spot: "+j.landing),new Date().toLocaleDateString()].filter(Boolean).join(" · "))+' · Pins tie to callout IDs on the Level 2 table.</div>';
+  S.photos.forEach(function(p){var no=photoNo(p);h+='<div class="pg"><b>V'+no+' · '+esc(p.room)+'</b> <span class="m">'+esc(p.name||"")+'</span><br><div class="st">'+(IMG[p.id]?'<img src="'+IMG[p.id]+'">':'(image missing)')+p.pins.map(function(pn){return '<span class="pin" style="left:'+(pn.x*100)+'%;top:'+(pn.y*100)+'%">'+pn.n+'</span>';}).join("")+'</div>';
+    var vr=V.filter(function(v){return v.photo==="V"+no;});
+    if(vr.length)h+='<table><tr><th>Pin</th><th>Callout ID</th><th>Row (trade · action · material)</th><th>Room</th><th>Entry</th></tr>'+vr.map(function(v){return '<tr><td>'+v.pin+'</td><td>'+esc(v.callout)+'</td><td>'+esc(v.row)+'</td><td>'+esc(v.room)+'</td><td>'+esc(v.entry)+'</td></tr>';}).join("")+'</table>';
+    h+='</div>';});
+  if(!S.photos.length)h+='<p>No photos yet.</p>';
+  return h+'</body></html>';}
+function all(){renderJob();renderSetup();renderWalk();renderTable();renderVis();}
+function changed(){save();renderTable();}
+function setTab(n){["job","walk","vis"].forEach(function(x){$("tab-"+x).classList.toggle("hide",x!==n);});Array.prototype.forEach.call(document.querySelectorAll("nav.tabs button"),function(b){b.classList.toggle("cur",b.dataset.tab===n);});if(n==="vis")renderVis();}
+[["j-name","name"],["j-insp","inspector"],["j-land","landing"],["j-entity","entity"]].forEach(function(p){var f=function(){S.job[p[1]]=$(p[0]).value;save();var m=jobMissing();$("j-miss").innerHTML=m.length?'<span class="flag">Missing: '+esc(m.join(", "))+'</span>':'Job info complete.';};$(p[0]).addEventListener("input",f);$(p[0]).addEventListener("change",f);});
+document.addEventListener("change",function(ev){var el=ev.target;
+  if(el.dataset.tr){var c=el.dataset.tr,i=S.trades.indexOf(c); if(el.checked&&i<0)S.trades.push(c); if(!el.checked&&i>=0)S.trades.splice(i,1); save();renderWalk();renderTable();return;}
+  if(el.dataset.pin){var a=el.dataset.pin.split("|"),p=S.photos.filter(function(q){return q.id===a[0];})[0];p.pins.forEach(function(pn){if(String(pn.n)===a[1])pn.entry=el.value;});changed();return;}
+  if(el.dataset.f){var id=el.closest(".ent").dataset.id,e=entryById(id); e[el.dataset.f]=el.value; changed(); if(el.dataset.f==="status")renderWalk();}
+});
+document.addEventListener("input",function(ev){var el=ev.target; if(el.dataset.f&&el.tagName==="INPUT"){var id=el.closest(".ent").dataset.id,e=entryById(id); e[el.dataset.f]=el.value; changed();}});
+function addRoom(n){n=t(n); if(!n||S.rooms.indexOf(n)>=0)return; S.rooms.push(n); if(!S.cur)S.cur=n; if(!S.vcur)S.vcur=n; save();all();}
+document.addEventListener("click",function(ev){var el=ev.target,d=el.dataset||{};
+  var stg=el.closest&&el.closest(".stage");
+  if(stg&&el.tagName==="IMG"){var r=el.getBoundingClientRect();var x=(ev.clientX-r.left)/r.width,y=(ev.clientY-r.top)/r.height;if(x>=0&&x<=1&&y>=0&&y<=1){addPin(stg.dataset.stage,x,y);renderVis();renderTable();}return;}
+  if(d.tab){setTab(d.tab);}
+  else if(d.room){S.cur=d.room;save();renderWalk();}
+  else if(d.vroom){S.vcur=d.vroom;save();renderVis();}
+  else if(d.add){S.entries.push(newEnt(S.cur,d.add));changed();renderWalk();}
+  else if(d.del){ev.preventDefault();S.entries=S.entries.filter(function(e){return e.id!==d.del;});S.photos.forEach(function(p){p.pins.forEach(function(pn){if(pn.entry===d.del)pn.entry="";});});changed();renderWalk();}
+  else if(d.delph){ev.preventDefault();if(confirm("Remove this photo and its pins?")){S.photos=S.photos.filter(function(p){return p.id!==d.delph;});dbDel(d.delph);delete IMG[d.delph];changed();renderVis();}}
+  else if(d.delpin){ev.preventDefault();var a=d.delpin.split("|"),p=S.photos.filter(function(q){return q.id===a[0];})[0];p.pins=p.pins.filter(function(pn){return String(pn.n)!==a[1];});changed();renderVis();}
+  else if(d.delroom){ev.preventDefault();if(confirm("Remove room "+d.delroom+" and its entries?")){S.rooms=S.rooms.filter(function(r){return r!==d.delroom;});S.entries=S.entries.filter(function(e){return e.room!==d.delroom;});if(S.cur===d.delroom)S.cur=S.rooms[0]||null;save();all();}}
+  else if(d.elev){addRoom("Exterior "+d.elev);}
+});
+$("b-room").onclick=function(){addRoom($("room-in").value);$("room-in").value="";};
+$("room-in").onkeydown=function(e){if(e.key==="Enter")$("b-room").click();};
+$("b-addph").onclick=function(){$("f-ph").click();};
+$("f-ph").onchange=function(){var f=this.files[0],inp=this;if(!f||!S.vcur)return;$("ph-msg").textContent="Loading photo…";shrink(f,function(data,w,h){inp.value="";if(!data){$("ph-msg").textContent="Couldn't read that image.";return;}addPhoto(S.vcur,f.name,data,w,h);$("ph-msg").textContent="";renderVis();});};
+$("b-reset").onclick=function(){if(confirm("Clear everything on this test page?")){S.photos.forEach(function(p){dbDel(p.id);});IMG={};S=blank();save();all();}};
+$("b-sample").onclick=function(){
+  S=blank(); S.job={name:"Sample Job",entity:"Delta Dry",inspector:"Sample",landing:"JobTread › Files"}; S.trades=["DRY","TRIM","PNT","EXT"]; S.rooms=["Kitchen","Living Room","Hall","Bedroom 1","Exterior Front","Exterior Rear"]; S.cur="Kitchen"; S.vcur="Kitchen";
+  function E(room,trade,action,material,qty,unit,status,hold,note,finish){var e=newEnt(room,trade);e.action=action;e.material=material;e.qty=qty;e.unit=unit;e.status=status;e.hold=hold||"";e.note=note||"";e.finish=finish||"";S.entries.push(e);}
+  E("Kitchen","DRY","remove and replace","1/2\" drywall, walls","120","SF","known","","","Smooth, match existing");
+  E("Living Room","DRY","remove and replace","1/2\" Drywall walls","200","SF","known","","","smooth match existing");
+  E("Hall","DRY","remove and replace","1/2\" drywall, walls","80","SF","assumed","","2 ft flood cut assumed","Smooth, match existing");
+  E("Kitchen","DRY","remove and replace","5/8\" drywall, ceiling","150","SF","known","","","Knockdown texture");
+  E("Living Room","DRY","","5/8\" drywall, ceiling","220","SF","known","","","Knockdown texture");
+  E("Kitchen","TRIM","remove and replace","3-1/4\" MDF base","40","LF","known");
+  E("Living Room","TRIM","remove and replace","3-1/4\" MDF base","12","EA","known","","entered as pieces by mistake");
+  E("Kitchen","PNT","replace","Wall paint, 2 coats","120","SF","known");
+  E("Living Room","PNT","replace","Wall paint, 2 coats","200","SF","known");
+  E("Bedroom 1","PNT","replace","Wall paint, 2 coats","300","SF","hold","Pending moisture readings in Bedroom 1");
+  E("Exterior Front","EXT","remove and replace","Vinyl siding, Dutch lap","200","SF","known");
+  E("Exterior Rear","EXT","remove and replace","Vinyl siding, Dutch lap","150","SF","known");
+  save();all();};
+function stamp(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+function fileBase(){var j=t(S.job.name).replace(/[^A-Za-z0-9 _-]/g,"").replace(/\s+/g,"_");return (j?j+"_":"")+"RoomWalk_v2_TEST_"+stamp();}
+function download(name,mime,data){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}
+function csvRows(){var rows=rollup().rows;return [TABLE_COLS].concat(tableRows(rows));}
+function csvText(){var j=S.job;var pre=[["Job",j.name],["Entity",j.entity],["Inspector",j.inspector],["Landing spot",j.landing],[]];return pre.concat(csvRows()).map(function(row){return row.map(function(c){var s=String(c==null?"":c);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");}).join("\r\n");}
+function entriesSheet(){var hdr=["Room","Trade / code","Action","Material","Qty","Unit","Finish","Status","Hold reason","Note","→ Callout ID","Pins"];var R=rollup(),pins={};
+  S.photos.forEach(function(p){p.pins.forEach(function(pn){if(pn.entry)(pins[pn.entry]=pins[pn.entry]||[]).push("V"+photoNo(p)+"-"+pn.n);});});
+  return [{cells:hdr,style:1}].concat(S.entries.filter(function(e){return R.byEntry[e.id];}).map(function(e){return {cells:[e.room,e.trade,e.action,t(e.material),isNum(e.qty)?num(e.qty):t(e.qty),e.unit,t(e.finish),e.status,t(e.hold),t(e.note),R.byEntry[e.id],(pins[e.id]||[]).join(", ")],style:e.status==="hold"?3:2};}));}
+function jobSheet(){var j=S.job,R=rollup();return [{cells:["Field","Value"],style:1},{cells:["Job name",j.name],style:2},{cells:["Entity",j.entity],style:2},{cells:["Inspector",j.inspector],style:2},{cells:["Landing spot",j.landing],style:2},{cells:["Exported",new Date().toLocaleString()],style:2},{cells:["Page version",VERSION],style:2},{cells:["Level 2 rows",R.rows.length],style:2},{cells:["Room entries",S.entries.length-R.empty.length],style:2},{cells:["Photos / pins",S.photos.length+" / "+S.photos.reduce(function(a,p){return a+p.pins.length;},0)],style:2},{cells:["Missing job info",jobMissing().join(", ")||"none"],style:2}];}
+function visSheet(){return [{cells:["Photo","Photo file","Photo room","Pin #","Callout tag","Callout ID","Row (trade · action · material)","Entry room","Entry","Pin X %","Pin Y %"],style:1}].concat(visRows().map(function(v){return {cells:[v.photo,v.file,v.proom,v.pin,v.tag,v.callout,v.row,v.room,v.entry,Math.round(v.x*1000)/10,Math.round(v.y*1000)/10],style:2};}));}
+function buildXlsx(){
+  var rows=rollup().rows,WID=[10,10,20,16,24,8,7,26,30,10,44,14,44,22];
+  var sheets=[
+   {name:"Plan set table",xml:sheetXml([{cells:TABLE_COLS,style:1}].concat(tableRows(rows).map(function(c,i){return {cells:c,style:rows[i].status==="hold"?3:2};})),{tab0:true,freeze:true,widths:WID,filter:"A1:N"+(rows.length+1),landscape:true})},
+   {name:"Job",xml:sheetXml(jobSheet(),{widths:[20,50]})},
+   {name:"Room entries",xml:sheetXml(entriesSheet(),{freeze:true,widths:[16,10,18,26,8,7,22,10,24,30,10,14]})},
+   {name:"Visuals",xml:sheetXml(visSheet(),{freeze:true,widths:[8,22,16,6,10,10,40,16,26,8,8]})}];
+  var wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheets.map(function(s,i){return '<sheet name="'+s.name+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>';}).join("")+'</sheets></workbook>';
+  var n=sheets.length;
+  var wr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map(function(s,i){return '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>';}).join("")+'<Relationship Id="rId'+(n+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+sheets.map(function(s,i){return '<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';}).join("")+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+  var rr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  return zip([{name:"[Content_Types].xml",data:ct},{name:"_rels/.rels",data:rr},{name:"xl/workbook.xml",data:wb},{name:"xl/_rels/workbook.xml.rels",data:wr},{name:"xl/styles.xml",data:xlsxStyles()}].concat(sheets.map(function(s,i){return {name:"xl/worksheets/sheet"+(i+1)+".xml",data:s.xml};})));
+}
+function projectJson(){var imgs={};S.photos.forEach(function(p){if(IMG[p.id])imgs[p.id]=IMG[p.id];});return JSON.stringify({kind:"delta-roomwalk-project",version:VERSION,state:S,images:imgs});}
+function loadProject(o){S.photos.forEach(function(p){dbDel(p.id);});IMG={};S=fix(o.state);Object.keys(o.images||{}).forEach(function(k){IMG[k]=o.images[k];dbPut(k,o.images[k]);});save();all();}
+$("b-xlsx").onclick=function(){download(fileBase()+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buildXlsx());};
+$("b-csv").onclick=function(){download(fileBase()+".csv","text/csv;charset=utf-8","\uFEFF"+csvText());};
+$("b-vhtml").onclick=function(){download(fileBase()+"_Visuals.html","text/html",visualsHtml());};
+$("b-print").onclick=function(){var w=window.open("","_blank");if(!w){alert("Allow pop-ups, or use Download visuals page.");return;}w.document.write(visualsHtml());w.document.close();setTimeout(function(){w.focus();w.print();},600);};
+$("b-save").onclick=function(){download(fileBase()+"_project.json","application/json",projectJson());};
+$("b-open").onclick=function(){$("f-open").click();};
+$("f-open").onchange=function(){var f=this.files[0],inp=this;if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.kind!=="delta-roomwalk-project")throw 0;loadProject(o);}catch(e){alert("That isn't a room-walk project file.");}inp.value="";};fr.readAsText(f);};
+window.__rw={version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);save();all();},same:same,render:all,setTab:setTab};
+dbOpen(function(){dbLoadAll(function(){all();});});
+all();
+})();
+</script></body></html>

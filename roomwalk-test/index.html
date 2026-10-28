@@ -1,246 +1,28 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Delta Room-Walk Rollup TEST</title>
-<style>
-body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f4f6f9;color:#1d2733;font-size:14px}
-header{background:#1f3a5f;color:#fff;padding:10px 16px}header h1{margin:0;font-size:18px}header .s{font-size:12px;opacity:.85}
-.bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;background:#e3e9f2}
-button{padding:6px 10px;border:1px solid #8a96a8;border-radius:5px;background:#fff;cursor:pointer;font-size:13px}button.ok{background:#2d6a3e;color:#fff;border-color:#2d6a3e}button.warn{background:#9b2c2c;color:#fff;border-color:#9b2c2c}
-section{background:#fff;margin:10px 16px;padding:10px 12px;border-radius:8px;box-shadow:0 1px 2px #0002}
-h2{font-size:15px;margin:0 0 8px}.chips label{display:inline-block;margin:2px 6px 2px 0;white-space:nowrap}
-.cols{display:grid;grid-template-columns:minmax(360px,1fr) minmax(480px,1.4fr);gap:0}
-@media(max-width:900px){.cols{grid-template-columns:1fr}}
-.rooms button{margin:2px}.rooms button.cur{background:#1f3a5f;color:#fff}
-.ent{border:1px solid #cfd6e0;border-radius:6px;padding:6px;margin:6px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.ent .tr{grid-column:1/-1;font-weight:600;display:flex;justify-content:space-between}.ent .w2{grid-column:span 2}.ent .w4{grid-column:1/-1}
-.ent input,.ent select{width:100%;box-sizing:border-box;padding:3px;font-size:13px}
-.lbl{font-size:11px;color:#556}
-table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #cfd6e0;padding:3px 5px;vertical-align:top;text-align:left}th{background:#d9e1ec}
-tr.hold td{background:#fff3c4}td.mm{background:#f8d0d0;color:#7a0000;font-weight:700}
-.flag{color:#7a0000;font-weight:700}.hint{font-size:12px;color:#556}.tblwrap{overflow-x:auto}
-</style></head><body>
-<div style="background:#9b2c2c;color:#fff;padding:10px 16px;font:700 15px system-ui,Arial,sans-serif">Old test version. Use the current room-walk test: <a style="color:#fff;text-decoration:underline" href="../roomwalk-test-v4/">open the current room-walk test (v4)</a></div>
-<header><h1>Delta Room-Walk → Level 2 Rollup · TEST PAGE</h1><div class="s">Standalone test. Not a form version; does not touch v1.3–v1.7 or JobTread. Rules unchanged: new row only when Action or Material changes (Ben, 2026-10-05).</div></header>
-<div class="bar"><button id="b-sample">Load sample</button><button class="warn" id="b-reset">Reset</button><button class="ok" id="b-xlsx">Export .xlsx</button><button class="ok" id="b-csv">Export CSV</button><span id="saved" class="hint" style="align-self:center"></span></div>
-<section><h2>1 · Setup</h2>
-<div class="lbl">Trades on this job (v1.3 code list)</div><div class="chips" id="trades"></div>
-<div class="lbl" style="margin-top:8px">Rooms / locations</div>
-<input id="room-in" placeholder="e.g. Kitchen" style="padding:4px"><button id="b-room">Add room</button>
-<button data-elev="Front">+ Exterior Front</button><button data-elev="Rear">+ Exterior Rear</button><button data-elev="Left">+ Exterior Left</button><button data-elev="Right">+ Exterior Right</button>
-<div id="roomlist" class="hint" style="margin-top:4px"></div></section>
-<div class="cols">
-<section><h2>2 · Walk (room by room)</h2><div class="rooms" id="rooms"></div><div id="walk"></div></section>
-<section><h2>3 · Rolled-up Level 2 table</h2><div id="sum" class="hint"></div><div class="tblwrap" id="table"></div></section>
-</div>
+<title>Retired: Delta Scope App room-walk v1</title>
+<noscript><meta http-equiv="refresh" content="0;url=https://ben-delta.github.io/delta-scope-form/roomwalk-test-v4/"></noscript>
+<style>body{font:17px -apple-system,Segoe UI,Arial,sans-serif;margin:24px;color:#1f2a37}button,a.b{display:inline-block;font-size:17px;padding:12px 16px;margin:8px 8px 0 0;border-radius:8px;border:1px solid #1f4e8c;background:#1f4e8c;color:#fff;text-decoration:none}a.l{color:#1f4e8c}.hide{display:none}</style></head><body>
+<p id="msg">This version is retired. Opening the current Scope App (v4)…</p>
+<div id="bk" class="hide"><p>Jobs from the older version are saved on this device. The Scope App (v4) brings them in by itself. For safety, download a backup first. You can open it in v4 with <b>Open project file</b>.</p>
+<button id="dl" type="button">Download my saved jobs</button><a class="b" id="go" href="https://ben-delta.github.io/delta-scope-form/roomwalk-test-v4/" style="background:#fff;color:#1f4e8c">Continue to v4</a></div>
+<p><a class="l" href="https://ben-delta.github.io/delta-scope-form/roomwalk-test-v4/">Open the current Scope App (v4)</a></p>
 <script>
-(function(){"use strict";
-// ---- xlsx writer copied verbatim from v1.3 (styles wrapped as xlsxStyles) ----
-var CRC_T=(function(){var t=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
-function crc32(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=CRC_T[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
-function zip(files){
-  var enc=new TextEncoder(), parts=[], central=[], off=0, d=new Date();
-  var dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF, dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
-  files.forEach(function(f){
-    var name=enc.encode(f.name), data=enc.encode(f.data), crc=crc32(data);
-    var lh=new DataView(new ArrayBuffer(30));
-    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);
-    lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
-    parts.push(new Uint8Array(lh.buffer),name,data);
-    var ch=new DataView(new ArrayBuffer(46));
-    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,0,true);ch.setUint16(12,dt,true);ch.setUint16(14,dd,true);
-    ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,name.length,true);
-    ch.setUint16(30,0,true);ch.setUint16(32,0,true);ch.setUint16(34,0,true);ch.setUint16(36,0,true);ch.setUint32(38,0,true);ch.setUint32(42,off,true);
-    central.push(new Uint8Array(ch.buffer),name);
-    off+=30+name.length+data.length;
-  });
-  var csize=central.reduce(function(a,b){return a+b.length;},0);
-  var e=new DataView(new ArrayBuffer(22));
-  e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);e.setUint16(20,0,true);
-  var all=parts.concat(central,[new Uint8Array(e.buffer)]), total=all.reduce(function(a,b){return a+b.length;},0), out=new Uint8Array(total), p=0;
-  all.forEach(function(a){out.set(a,p);p+=a.length;});
-  return out;
-}
-function xesc(s){return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function colL(i){var s="";i++;while(i>0){var m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;}
-function cell(ref,v,style){
-  var s=style?' s="'+style+'"':'';
-  if(v===null||v===undefined||v==="") return style?'<c r="'+ref+'"'+s+'/>':'';
-  if(typeof v==="number" && isFinite(v)) return '<c r="'+ref+'"'+s+'><v>'+v+'</v></c>';
-  return '<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>';
-}
-// rows: array of {cells:[], style:n or [per-cell]}
-function sheetXml(rows, opt){
-  opt=opt||{};
-  var x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
-  var maxC=rows.reduce(function(a,r){return Math.max(a,r.cells.length);},1);
-  x+='<dimension ref="A1:'+colL(maxC-1)+Math.max(rows.length,1)+'"/>';
-  x+='<sheetViews><sheetView workbookViewId="0"'+(opt.tab0?' tabSelected="1"':'')+'>'+(opt.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>':'')+'</sheetView></sheetViews>';
-  x+='<sheetFormatPr defaultRowHeight="15"/>';
-  if(opt.widths){ x+='<cols>'+opt.widths.map(function(w,i){return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}).join("")+'</cols>'; }
-  x+='<sheetData>';
-  rows.forEach(function(r,ri){
-    x+='<row r="'+(ri+1)+'">';
-    r.cells.forEach(function(v,ci){ var st=Array.isArray(r.style)?r.style[ci]:r.style; x+=cell(colL(ci)+(ri+1),v,st||0); });
-    x+='</row>';
-  });
-  x+='</sheetData>';
-  if(opt.protect) x+='<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" formatColumns="0" formatRows="0" sort="0" autoFilter="0"/>';
-  if(opt.filter) x+='<autoFilter ref="'+opt.filter+'"/>';
-  if(opt.dv) x+='<dataValidations count="'+opt.dv.length+'">'+opt.dv.map(function(d){return '<dataValidation type="list" allowBlank="1" showErrorMessage="1" sqref="'+d.sqref+'"><formula1>"'+xesc(d.list)+'"</formula1></dataValidation>';}).join("")+'</dataValidations>';
-  x+='<pageMargins left="0.5" right="0.5" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>';
-  if(opt.landscape) x+='<pageSetup orientation="landscape"/>';
-  x+='</worksheet>';
-  return x;
-}
-function xlsxStyles(){
-  var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-   '<fonts count="3"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="14"/><name val="Calibri"/><family val="2"/></font></fonts>'+
-   '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E1EC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF3C4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
-   '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF8A96A8"/></bottom><diagonal/></border></borders>'+
-   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
-   '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
-   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>'+
-   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
-   '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
-   '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
-   '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs>'+
-   '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
-  return styles; }
-var CODES = [["GC","General Conditions / GC"],["FRAM","Framing"],["MECH","Mechanical / HVAC"],["PLUMB","Plumbing"],["ELEC","Electrical"],["INSUL","Insulation"],["DRY","Drywall"],["TRIM","Trim / millwork"],["TILE","Tile"],["FLR","Flooring (non-tile)"],["DOOR","Doors"],["PNT","Paint"],["DEMO","Demolition"],["ROOF","Roofing"],["EXT","Exterior / siding / openings"],["CAB","Cabinets"],["CLN","Cleaning / contents"],["MIT","Mitigation / dry-out"]];
-var CODE_NAME={},CODE_ORD={};CODES.forEach(function(c,i){CODE_NAME[c[0]]=c[1];CODE_ORD[c[0]]=i;});
-var ACTIONS=["remove only","install only","remove and replace","replace","detach & reset","n/a"];
-var STATUSES=["known","assumed","hold"];
-var UNITS=["SF","LF","SY","EA","LS","Set","HR"];
-var TABLE_COLS=["Callout ID(s)","Trade / code","Cost Group","Action","Location","Qty","Unit","Material","Finish","Status","Note","Selection"];
-var K="delta-roomwalk-test-v1";
-function $(id){return document.getElementById(id);}
-function t(s){return (s==null?"":String(s)).trim();}
-function isNum(s){return /^\d+(\.\d+)?$/.test(t(s).replace(/,/g,""));}
-function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
-function blank(){return {trades:[],rooms:[],entries:[],cur:null,seq:0};}
-var S; try{S=JSON.parse(localStorage.getItem(K)||"null");}catch(e){} if(!S)S=blank();
-function save(){try{localStorage.setItem(K,JSON.stringify(S));$("saved").textContent="Saved on this device "+new Date().toLocaleTimeString();}catch(e){$("saved").textContent="Couldn't save";}}
-function newEnt(room,trade){S.seq++;return {id:"e"+S.seq,room:room,trade:trade,action:"",material:"",qty:"",unit:"",finish:"",status:"",hold:"",note:""};}
-function opts(list,v,ph){return '<option value="">'+ph+'</option>'+list.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join("");}
-function renderSetup(){
-  $("trades").innerHTML=CODES.map(function(c){return '<label><input type="checkbox" data-tr="'+c[0]+'"'+(S.trades.indexOf(c[0])>=0?' checked':'')+'> '+c[0]+' · '+esc(c[1])+'</label>';}).join("");
-  $("roomlist").innerHTML=S.rooms.length?S.rooms.map(function(r){return esc(r)+' <a href="#" data-delroom="'+esc(r)+'">×</a>';}).join(" · "):"No rooms yet.";
-}
-function actOpts(trade,v){return opts(ACTIONS.filter(function(a){return a!=="n/a"||trade==="GC";}),v,"Action…");}
-function renderWalk(){
-  $("rooms").innerHTML=S.rooms.map(function(r){var n=S.entries.filter(function(e){return e.room===r;}).length;return '<button data-room="'+esc(r)+'"'+(r===S.cur?' class="cur"':'')+'>'+esc(r)+(n?' ('+n+')':'')+'</button>';}).join("");
-  var w=$("walk");
-  if(!S.cur||S.rooms.indexOf(S.cur)<0){w.innerHTML='<p class="hint">Pick a room above. You will see only the trades assigned in Setup.</p>';return;}
-  var h='';
-  S.trades.slice().sort(function(a,b){return CODE_ORD[a]-CODE_ORD[b];}).forEach(function(tr){
-    var es=S.entries.filter(function(e){return e.room===S.cur&&e.trade===tr;});
-    h+='<div style="margin-top:8px"><b>'+tr+' · '+esc(CODE_NAME[tr])+'</b> <button data-add="'+tr+'">+ entry</button>'+(es.length?'':' <span class="hint">nothing in this room</span>')+'</div>';
-    es.forEach(function(e){
-      h+='<div class="ent" data-id="'+e.id+'"><div class="tr"><span>'+esc(S.cur)+' · '+tr+'</span><a href="#" data-del="'+e.id+'">remove entry</a></div>'+
-      '<div class="w2"><div class="lbl">Action</div><select data-f="action">'+actOpts(tr,e.action)+'</select></div>'+
-      '<div class="w2"><div class="lbl">Material (one per entry)</div><input data-f="material" value="'+esc(e.material)+'"></div>'+
-      '<div><div class="lbl">Qty</div><input data-f="qty" inputmode="decimal" value="'+esc(e.qty)+'"></div>'+
-      '<div><div class="lbl">Unit</div><select data-f="unit">'+opts(UNITS,e.unit,"Unit…")+'</select></div>'+
-      '<div class="w2"><div class="lbl">Finish</div><input data-f="finish" value="'+esc(e.finish)+'"></div>'+
-      '<div><div class="lbl">Status</div><select data-f="status">'+opts(STATUSES,e.status,"Status…")+'</select></div>'+
-      '<div class="w2"'+(e.status==="hold"?'':' style="visibility:hidden"')+'><div class="lbl">Hold reason (required)</div><input data-f="hold" value="'+esc(e.hold)+'"></div><div></div>'+
-      '<div class="w4"><div class="lbl">Note</div><input data-f="note" value="'+esc(e.note)+'"></div></div>';
-    });
-  });
-  if(!S.trades.length) h='<p class="hint">No trades picked in Setup yet.</p>';
-  w.innerHTML=h;
-}
-function keyOf(e){return e.trade+"|"+e.action+"|"+t(e.material).toLowerCase().replace(/\s+/g," ");}
-function fmtN(n){return Math.round(n*1000)/1000;}
-function rollup(){
-  var groups=[],map={},incomplete=[];
-  S.entries.forEach(function(e){
-    if(!e.action||!t(e.material)){ if(e.action||t(e.material)||t(e.qty)) incomplete.push(e); return;}
-    var k=keyOf(e); if(!map[k]){map[k]={trade:e.trade,action:e.action,material:t(e.material),ents:[]};groups.push(map[k]);} map[k].ents.push(e);
-  });
-  groups.sort(function(a,b){return CODE_ORD[a.trade]-CODE_ORD[b.trade];}); // stable: first-seen order within a trade
-  var rows=groups.map(function(g,i){
-    var rooms=[];g.ents.forEach(function(e){if(rooms.indexOf(e.room)<0)rooms.push(e.room);});
-    rooms.sort(function(a,b){return S.rooms.indexOf(a)-S.rooms.indexOf(b);});
-    var units={},blankQ=false,nonNum=false;
-    g.ents.forEach(function(e){ if(!t(e.qty)){blankQ=true;return;} if(!isNum(e.qty))nonNum=true; var u=e.unit||"(no unit)"; units[u]=(units[u]||0)+(isNum(e.qty)?parseFloat(t(e.qty).replace(/,/g,"")):0); });
-    var uk=Object.keys(units),qty="",unit="",flags=[];
-    if(uk.length===1&&!nonNum){qty=fmtN(units[uk[0]]);unit=uk[0]==="(no unit)"?"":uk[0]; if(uk[0]==="(no unit)")flags.push("UNIT MISSING");}
-    else if(uk.length>1){qty=uk.map(function(u){return fmtN(units[u])+" "+u;}).join(" + ");unit="MIXED";flags.push("UNIT MISMATCH: "+g.ents.map(function(e){return e.room+" "+t(e.qty)+" "+(e.unit||"?");}).join(", ")+" — not summed");}
-    if(nonNum)flags.push("NON-NUMBER QTY");
-    if(blankQ)flags.push("QTY BLANK in "+g.ents.filter(function(e){return !t(e.qty);}).map(function(e){return e.room;}).join(", "));
-    var fins=[];g.ents.forEach(function(e){if(t(e.finish)&&fins.indexOf(t(e.finish))<0)fins.push(t(e.finish));});
-    if(fins.length>1)flags.push("FINISH DIFFERS BY ROOM");
-    var st=g.ents.some(function(e){return e.status==="hold";})?"hold":g.ents.some(function(e){return e.status==="assumed";})?"assumed":g.ents.every(function(e){return e.status==="known";})?"known":"";
-    if(!st)flags.push("STATUS MISSING");
-    var notes=[];
-    g.ents.forEach(function(e){ if(e.status==="hold") notes.push("HOLD ("+e.room+"): "+(t(e.hold)||"reason missing")); });
-    g.ents.forEach(function(e){ if(t(e.note)) notes.push(e.room+": "+t(e.note)); });
-    var noteTxt=(flags.length?"⚠ "+flags.join("; ")+(notes.length?" | ":""):"")+notes.join("; ");
-    return {callout:String(i+1),trade:g.trade,action:g.action,location:rooms.join("; "),qty:qty,unit:unit,material:g.material,finish:fins.join("; "),status:st,note:noteTxt,selection:"",flags:flags,n:g.ents.length};
-  });
-  return {rows:rows,incomplete:incomplete};
-}
-function tableRows(rows){return rows.map(function(r){return [r.callout,r.trade,CODE_NAME[r.trade]||"",r.action,r.location,typeof r.qty==="number"?r.qty:r.qty,r.unit,r.material,r.finish,r.status,r.note,r.selection];});}
-function renderTable(){
-  var R=rollup(),rows=R.rows;
-  var mm=rows.filter(function(r){return r.unit==="MIXED";}).length,hold=rows.filter(function(r){return r.status==="hold";}).length;
-  $("sum").innerHTML='<b>'+rows.length+'</b> rows from <b>'+(S.entries.length-R.incomplete.length)+'</b> room entries · holds: '+hold+' · <span class="'+(mm?'flag':'')+'">unit mismatches: '+mm+'</span>'+(R.incomplete.length?' · <span class="flag">'+R.incomplete.length+' entries missing Action or Material (not in table)</span>':'')+'<br>Group key = Trade + Action + Material. Rooms never add rows.';
-  $("table").innerHTML='<table id="rt"><thead><tr>'+TABLE_COLS.map(function(c){return '<th>'+esc(c)+'</th>';}).join("")+'</tr></thead><tbody>'+
-    rows.map(function(r){var c=tableRows([r])[0];return '<tr class="'+(r.status==="hold"?'hold':'')+'" data-flags="'+esc(r.flags.join("|"))+'">'+c.map(function(v,i){return '<td'+((i===5||i===6)&&r.unit==="MIXED"?' class="mm"':'')+'>'+esc(v)+'</td>';}).join("")+'</tr>';}).join("")+'</tbody></table>';
-}
-function all(){renderSetup();renderWalk();renderTable();}
-function changed(){save();renderTable();}
-document.addEventListener("change",function(ev){var el=ev.target;
-  if(el.dataset.tr){var c=el.dataset.tr,i=S.trades.indexOf(c); if(el.checked&&i<0)S.trades.push(c); if(!el.checked&&i>=0)S.trades.splice(i,1); save();renderWalk();renderTable();return;}
-  if(el.dataset.f){var id=el.closest(".ent").dataset.id,e=S.entries.filter(function(x){return x.id===id;})[0]; e[el.dataset.f]=el.value; changed(); if(el.dataset.f==="status")renderWalk();}
-});
-document.addEventListener("input",function(ev){var el=ev.target; if(el.dataset.f&&el.tagName==="INPUT"){var id=el.closest(".ent").dataset.id,e=S.entries.filter(function(x){return x.id===id;})[0]; e[el.dataset.f]=el.value; changed();}});
-function addRoom(n){n=t(n); if(!n||S.rooms.indexOf(n)>=0)return; S.rooms.push(n); if(!S.cur)S.cur=n; save();all();}
-document.addEventListener("click",function(ev){var el=ev.target,d=el.dataset;
-  if(d.room){S.cur=d.room;save();renderWalk();}
-  else if(d.add){S.entries.push(newEnt(S.cur,d.add));changed();renderWalk();}
-  else if(d.del){ev.preventDefault();S.entries=S.entries.filter(function(e){return e.id!==d.del;});changed();renderWalk();}
-  else if(d.delroom){ev.preventDefault();if(confirm("Remove room "+d.delroom+" and its entries?")){S.rooms=S.rooms.filter(function(r){return r!==d.delroom;});S.entries=S.entries.filter(function(e){return e.room!==d.delroom;});if(S.cur===d.delroom)S.cur=S.rooms[0]||null;save();all();}}
-  else if(d.elev){addRoom("Exterior "+d.elev);}
-});
-$("b-room").onclick=function(){addRoom($("room-in").value);$("room-in").value="";};
-$("room-in").onkeydown=function(e){if(e.key==="Enter")$("b-room").click();};
-$("b-reset").onclick=function(){if(confirm("Clear everything on this test page?")){S=blank();save();all();}};
-$("b-sample").onclick=function(){
-  S=blank(); S.trades=["DRY","TRIM","PNT","EXT"]; S.rooms=["Kitchen","Living Room","Hall","Bedroom 1","Exterior Front","Exterior Rear"]; S.cur="Kitchen";
-  function E(room,trade,action,material,qty,unit,status,hold,note,finish){var e=newEnt(room,trade);e.action=action;e.material=material;e.qty=qty;e.unit=unit;e.status=status;e.hold=hold||"";e.note=note||"";e.finish=finish||"";S.entries.push(e);}
-  E("Kitchen","DRY","remove and replace","1/2\" drywall, walls","120","SF","known","","","Smooth, match existing");
-  E("Living Room","DRY","remove and replace","1/2\" drywall, walls","200","SF","known","","","Smooth, match existing");
-  E("Hall","DRY","remove and replace","1/2\" drywall, walls","80","SF","assumed","","2 ft flood cut assumed","Smooth, match existing");
-  E("Kitchen","DRY","remove and replace","5/8\" drywall, ceiling","150","SF","known","","","Knockdown texture");
-  E("Living Room","DRY","remove and replace","5/8\" drywall, ceiling","220","SF","known","","","Knockdown texture");
-  E("Kitchen","TRIM","remove and replace","3-1/4\" MDF base","40","LF","known");
-  E("Living Room","TRIM","remove and replace","3-1/4\" MDF base","12","EA","known","","entered as pieces by mistake");
-  E("Kitchen","PNT","replace","Wall paint, 2 coats","120","SF","known");
-  E("Living Room","PNT","replace","Wall paint, 2 coats","200","SF","known");
-  E("Bedroom 1","PNT","replace","Wall paint, 2 coats","300","SF","hold","Pending moisture readings in Bedroom 1");
-  E("Exterior Front","EXT","remove and replace","Vinyl siding, Dutch lap","200","SF","known");
-  E("Exterior Rear","EXT","remove and replace","Vinyl siding, Dutch lap","150","SF","known");
-  save();all();};
-function fileBase(){var d=new Date();return "RoomWalk_Rollup_TEST_"+d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
-function download(name,mime,data){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}
-function csvText(){var rows=rollup().rows;return [TABLE_COLS].concat(tableRows(rows)).map(function(row){return row.map(function(c){var s=String(c==null?"":c);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");}).join("\r\n");}
-function entriesSheet(){var hdr=["Room","Trade / code","Action","Material","Qty","Unit","Finish","Status","Hold reason","Note","→ Callout ID"];var R=rollup(),idx={};
-  R.rows.forEach(function(r){idx[r.trade+"|"+r.action+"|"+r.material.toLowerCase().replace(/\s+/g," ")]=r.callout;});
-  return [{cells:hdr,style:1}].concat(S.entries.map(function(e){return {cells:[e.room,e.trade,e.action,t(e.material),isNum(e.qty)?parseFloat(t(e.qty).replace(/,/g,"")):t(e.qty),e.unit,t(e.finish),e.status,t(e.hold),t(e.note),idx[keyOf(e)]||"(not rolled up)"],style:e.status==="hold"?3:2};}));}
-function buildXlsx(){
-  var rows=rollup().rows,WID=[14,11,22,18,28,8,7,26,26,10,40,26];
-  var s1=sheetXml([{cells:TABLE_COLS,style:1}].concat(tableRows(rows).map(function(c,i){return {cells:c,style:rows[i].status==="hold"?3:2};})),{tab0:true,freeze:true,widths:WID,filter:"A1:L"+(rows.length+1),landscape:true});
-  var s2=sheetXml(entriesSheet(),{freeze:true,widths:[18,10,18,26,8,7,22,10,30,30,12]});
-  var wb='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Plan set table" sheetId="1" r:id="rId1"/><sheet name="Room entries" sheetId="2" r:id="rId2"/></sheets></workbook>';
-  var wr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-  var ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
-  var rr='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
-  return zip([{name:"[Content_Types].xml",data:ct},{name:"_rels/.rels",data:rr},{name:"xl/workbook.xml",data:wb},{name:"xl/_rels/workbook.xml.rels",data:wr},{name:"xl/styles.xml",data:xlsxStyles()},{name:"xl/worksheets/sheet1.xml",data:s1},{name:"xl/worksheets/sheet2.xml",data:s2}]);
-}
-$("b-xlsx").onclick=function(){download(fileBase()+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buildXlsx());};
-$("b-csv").onclick=function(){download(fileBase()+".csv","text/csv;charset=utf-8","\uFEFF"+csvText());};
-window.__rw={rollup:rollup,csvText:csvText,buildXlsx:buildXlsx};
-all();
+(function(){var V4="https://ben-delta.github.io/delta-scope-form/roomwalk-test-v4/";
+var RW=["delta-roomwalk-test-v1","delta-roomwalk-test-v2","delta-roomwalk-test-v3"],DBS=["delta-roomwalk-v2-img","delta-roomwalk-v3-img"],keys={};
+function go(){location.replace(V4);}
+try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i),v=localStorage.getItem(k);
+  if(RW.indexOf(k)>=0){try{var o=JSON.parse(v);if(o&&o.entries&&(o.entries.length||(o.rooms||[]).length))keys[k]=v;}catch(e){}}
+  else if(k.indexOf("delta-l2-v13-")===0)keys[k]=v;}}catch(e){}
+var has=Object.keys(keys).some(function(k){return k.indexOf("delta-l2-v13-p:")===0||RW.indexOf(k)>=0;});
+if(!has)return go();
+document.getElementById("msg").textContent="This version is retired. The current Scope App is v4.";
+document.getElementById("bk").className="";
+function readDb(name,cb){var out={};try{var r=indexedDB.open(name);r.onsuccess=function(){var d=r.result;if(!d.objectStoreNames.contains("img")){d.close();return cb(out);}var c=d.transaction("img").objectStore("img").openCursor();c.onsuccess=function(){var x=c.result;if(x){out[x.key]=x.value;x.continue();}else{d.close();cb(out);}};c.onerror=function(){cb(out);};};r.onerror=function(){cb(out);};}catch(e){cb(out);}}
+document.getElementById("dl").onclick=function(){var b=this;b.disabled=true;b.textContent="Preparing…";var imgs={},n=DBS.length;
+  DBS.forEach(function(name){readDb(name,function(o){if(Object.keys(o).length)imgs[name]=o;if(--n===0)fin();});});
+  function fin(){var data=JSON.stringify({kind:"delta-scope-backup",v:1,from:location.pathname,created:new Date().toISOString(),keys:keys,images:imgs});
+    var d=new Date(),nm="Delta_Scope_Backup_"+d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2)+".json";
+    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download=nm;document.body.appendChild(a);a.click();
+    b.textContent="Backup saved. Opening v4…";setTimeout(go,1500);}};
 })();
 </script></body></html>
