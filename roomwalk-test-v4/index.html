@@ -79,7 +79,7 @@ tr.hold td{background:#fff3c4}tr.cont td{background:#ece6f7}tr.opt td{background
 <li><b>Option</b> is not a status: set Selection to "Option: TBD". The row is excluded from the base total.</li></ul>
 <b>Rows</b><ul style="margin:4px 0 4px 16px;padding:0"><li>Start a new row when the Action or the Material changes, not the room. Same item + same action in several rooms = one row (the page combines them).</li>
 <li>Same material with different quantities, notes or the way it fails = separate entries (e.g. partial baseboard + all quarter round). Same quantity everywhere = one ("baseboard and quarter round").</li>
-<li>A wrong qty is fine; it changes in the next revision. A range (e.g. 96-128) is only allowed on a hold. Qty must be a number above 0 (contingent may be blank). You can say numbers: "fourteen square feet" becomes 14 SF.</li>
+<li>A wrong qty is fine; it changes in the next revision. A range (e.g. 96-128) is only allowed on a hold. Qty must be a number above 0 (contingent may be blank). Typing or tapping is the default. Optional voice (approved: optional input): tap 🎤 next to Qty and say it, e.g. "fourteen square feet" → 14 SF. Nothing listens or converts unless you tap 🎤.</li>
 <li>Scope says what it is (material, action, quantity of the thing), not what it takes (labor hours, time, cost). Time thoughts go in the purple <b>Estimating note (time)</b>: internal estimating aid only, not a schedule commitment, never in the plan set or client exports.</li></ul>
 <b>Actions</b><ul style="margin:4px 0 4px 16px;padding:0"><li><b>remove only</b>: tear-out, no reinstall (demo = remove only).</li><li><b>install only</b>: install new or provided material; no material bought on this row.</li><li><b>remove and replace</b>: tear-out plus new install with materials.</li><li><b>replace</b>: new install with materials, no tear-out on this row. Paint = replace (Ben, 2026-10-08).</li><li><b>detach &amp; reset</b>: take off, put the same piece back. Not new material.</li><li><b>clean/treat</b>: Mitigation only (e.g. microbial clean/treat).</li><li><b>n/a</b>: General Conditions (GC) only.</li></ul>
 <b>Where things go (locked)</b><ul style="margin:4px 0 4px 16px;padding:0"><li>Floor protection goes under GC, not FLR. Tape, texture and primer stay inside DRY or PNT.</li><li>Shower drain, faucet, piping and trim go under PLUMB. Waterproof membrane and tile shower system go under TILE.</li><li>MECH, PLUMB and ELEC: Material is the system or fixture class, not every SKU.</li><li>If remove and install quantities differ, use two rows.</li><li>General Conditions: the Material field is the Item: what it is (Supervision, Dumpster, Portable toilet, Permit, Floor protection), not what it takes. No hours or cost in the Item.</li><li>Not sure? Tick ⚑ Stuck on the entry and type what you're thinking; it saves with the job and gets reviewed.</li></ul></details>
@@ -248,6 +248,16 @@ function spokenQty(str){var s=t(str).toLowerCase().replace(/(\d),(\d)/g,"$1$2");
   if(!started)return null;var n=total+cur;if(dec)n=parseFloat(String(Math.floor(n))+"."+dec);return {num:n,unit:unit};}
 function looksRange(v){return /\d\s*(-|–|to)\s*\d/i.test(t(v));}
 function normalizeQty(e){var q=t(e.qty);if(!q||isNum(q)||looksRange(q))return false;var p=spokenQty(q);if(!p)return false;e.qty=String(p.num);if(p.unit&&!e.unit)e.unit=p.unit;return true;}
+// Optional voice input for Qty (Ben, Oct 28: approved only as an optional input). Acts only on a deliberate tap of 🎤.
+// Never listens on its own; never converts typed text or note text automatically.
+var MIC_BUSY=false;
+function micTap(id){var e=entryById(id);if(!e||MIC_BUSY)return;var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  function apply(txt){var p=spokenQty(txt);if(!p){alert("Didn't catch a number"+(txt?' in "'+txt+'"':'')+". Type it instead.");return;}e.qty=String(p.num);if(p.unit&&!e.unit)e.unit=p.unit;changed();renderWalk();}
+  if(!SR){var cur=t(e.qty);if(cur&&!isNum(cur)&&!looksRange(cur)&&spokenQty(cur)){if(confirm('Voice input isn\'t available in this browser. Convert "'+cur+'" to a number?'))apply(cur);}else alert("Voice input isn't available in this browser. Type the quantity.");return;}
+  var r=new SR();r.lang="en-US";r.interimResults=false;r.maxAlternatives=1;r.continuous=false;MIC_BUSY=true;
+  var b=document.querySelector('[data-mic="'+id+'"]');if(b)b.textContent="…";
+  r.onresult=function(ev){apply(ev.results[0][0].transcript);};r.onerror=function(){alert("Voice input stopped. Type the quantity instead.");};r.onend=function(){MIC_BUSY=false;var bb=document.querySelector('[data-mic="'+id+'"]');if(bb)bb.textContent="🎤";};
+  try{r.start();}catch(err){MIC_BUSY=false;}}
 function tipsFor(tr){var tp=["New row only when the Action or the Material changes."];
   if(tr==="PNT")tp.push("Paint = replace (a new coat with materials).");
   if(tr==="GC")tp.push("GC Item = what it is (supervision, dumpster, permit, floor protection), not hours or cost. n/a is GC only.");
@@ -275,7 +285,7 @@ function renderWalk(){
       h+='<div class="ent" data-id="'+e.id+'"><div class="tr"><span>'+esc(S.cur)+' · '+tr+(R.byEntry[e.id]?' · row '+R.byEntry[e.id]:'')+'</span><a href="#" data-del="'+e.id+'">remove entry</a></div>'+
       '<div class="w2"><div class="lbl">Action</div><select data-f="action">'+actOpts(tr,e.action)+'</select></div>'+
       '<div class="w2"><div class="lbl">Material / Item (one per entry) <span title="'+esc(MATERIAL_HELP)+'">ⓘ</span></div><input data-f="material" value="'+esc(e.material)+'"></div>'+
-      '<div><div class="lbl">Qty'+(e.status==="contingent"?' (may be blank)':'')+'</div><input data-f="qty" inputmode="decimal" value="'+esc(e.qty)+'"></div>'+
+      '<div><div class="lbl">Qty'+(e.status==="contingent"?' (may be blank)':'')+'</div><span style="display:flex;gap:3px"><input data-f="qty" inputmode="decimal" style="flex:1;min-width:0" value="'+esc(e.qty)+'"><button type="button" data-mic="'+e.id+'" title="Optional: tap, then say the quantity" style="padding:4px 7px">🎤</button></span></div>'+
       '<div><div class="lbl">Unit</div><select data-f="unit">'+opts(UNITS,e.unit,"Unit…")+'</select></div>'+
       '<div class="w2"><div class="lbl">Finish (like-kind baseline)</div><input data-f="finish" value="'+esc(e.finish)+'"></div>'+
       '<div><div class="lbl">Status</div><select data-f="status">'+opts(STATUSES,e.status,"Status…")+'</select></div>'+
@@ -445,7 +455,7 @@ document.addEventListener("change",function(ev){var el=ev.target;
   if(el.dataset.pkind){S.photos.forEach(function(p){if(p.id===el.dataset.pkind)p.kind=el.value;});changed();return;}
   if(el.dataset.tr){var c=el.dataset.tr,i=S.trades.indexOf(c); if(el.checked&&i<0)S.trades.push(c); if(!el.checked&&i>=0)S.trades.splice(i,1); save();renderWalk();renderTable();return;}
   if(el.dataset.pin){var a=el.dataset.pin.split("|"),p=S.photos.filter(function(q){return q.id===a[0];})[0];p.pins.forEach(function(pn){if(String(pn.n)===a[1])pn.entry=el.value;});changed();return;}
-  if(el.dataset.f){var id=el.closest(".ent").dataset.id,e=entryById(id); if(el.type==="checkbox"){e[el.dataset.f]=el.checked;changed();renderWalk();return;} e[el.dataset.f]=el.value; if(el.dataset.f==="qty"&&normalizeQty(e)){changed();renderWalk();return;} if(el.dataset.f==="status"&&el.value==="assumed"&&isDamage()&&!t(e.hold))e.hold=LKQ_PRE; changed(); if(el.dataset.f==="status"||el.dataset.f==="selection")renderWalk();}
+  if(el.dataset.f){var id=el.closest(".ent").dataset.id,e=entryById(id); if(el.type==="checkbox"){e[el.dataset.f]=el.checked;changed();renderWalk();return;} e[el.dataset.f]=el.value; if(el.dataset.f==="status"&&el.value==="assumed"&&isDamage()&&!t(e.hold))e.hold=LKQ_PRE; changed(); if(el.dataset.f==="status"||el.dataset.f==="selection")renderWalk();}
 });
 document.addEventListener("input",function(ev){var el=ev.target; if(el.dataset.f&&el.tagName==="INPUT"&&el.type!=="checkbox"){var id=el.closest(".ent").dataset.id,e=entryById(id); e[el.dataset.f]=el.value; changed();}});
 function addRoom(n){n=t(n); if(!n||S.rooms.indexOf(n)>=0)return; S.rooms.push(n); if(!S.cur)S.cur=n; if(!S.vcur)S.vcur=n; save();all();}
@@ -462,6 +472,7 @@ document.addEventListener("click",function(ev){var el=ev.target,d=el.dataset||{}
   else if(d.delroom){ev.preventDefault();if(confirm("Remove room "+d.delroom+" and its entries?")){S.rooms=S.rooms.filter(function(r){return r!==d.delroom;});S.entries=S.entries.filter(function(e){return e.room!==d.delroom;});if(S.cur===d.delroom)S.cur=S.rooms[0]||null;save();all();}}
   else if(d.elev){var lb=$("elev-lbl").value;addRoom("Exterior "+d.elev+(lb?" ("+lb+")":""));}
   else if(d.merge||d.keep){S.mdec[d.merge||d.keep]=d.merge?"merge":"keep";changed();renderWalk();renderTable();}
+  else if(d.mic){ev.preventDefault();micTap(d.mic);}
   else if(d.none){ev.preventDefault();var k=tkey(S.cur,d.none);if(S.tchk[k]==="none")delete S.tchk[k];else S.tchk[k]="none";changed();renderWalk();renderCheck();}
   else if(d.delsrc){ev.preventDefault();S.sources.splice(+d.delsrc,1);save();renderJob();}
   else if(d.closechk){ev.preventDefault();S.check=null;save();renderCheck();}
@@ -541,7 +552,7 @@ $("b-print").onclick=function(){var w=window.open("","_blank");if(!w){alert("All
 $("b-save").onclick=function(){download(fileBase()+"_project.json","application/json",projectJson());};
 $("b-open").onclick=function(){$("f-open").click();};
 $("f-open").onchange=function(){var f=this.files[0],inp=this;if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.kind!=="delta-roomwalk-project")throw 0;loadProject(o);}catch(e){alert("That isn't a room-walk project file.");}inp.value="";};fr.readAsText(f);};
-window.__rw={checkList:checkList,sweep:sweep,changesRows:changesRows,tnotesCsv:tnotesCsv,spokenQty:spokenQty,idx:function(){return IDX;},switchTo:switchTo,LKQ_PRE:LKQ_PRE,near:near,fileBase:fileBase,capSheet:capSheet,version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);if(!st.pid)S.pid=newPid();save();all();},same:same,render:all,setTab:setTab};
+window.__rw={micTap:micTap,checkList:checkList,sweep:sweep,changesRows:changesRows,tnotesCsv:tnotesCsv,spokenQty:spokenQty,idx:function(){return IDX;},switchTo:switchTo,LKQ_PRE:LKQ_PRE,near:near,fileBase:fileBase,capSheet:capSheet,version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);if(!st.pid)S.pid=newPid();save();all();},same:same,render:all,setTab:setTab};
 $("nojs-banner").style.display="none";
 if(!STORE_OK)$("store-banner").classList.remove("hide");
 window.addEventListener("error",function(e){var b=$("nojs-banner");b.style.display="";b.innerHTML="<b>The form hit an error.</b> Save project file now, then reload. Details: "+esc(e.message||"");});
