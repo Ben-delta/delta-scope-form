@@ -24,7 +24,7 @@ tr.hold td{background:#fff3c4}tr.cont td{background:#ece6f7}tr.opt td{background
 .stage img{display:block;max-width:100%;height:auto}
 .pin{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#c0392b;color:#fff;font:700 13px/26px system-ui,Arial;text-align:center;border:2px solid #fff;box-shadow:0 1px 3px #000a;pointer-events:none}
 .pinrow{display:flex;gap:6px;align-items:center;margin:3px 0}.pinrow select{flex:1;font-size:15px;padding:4px;min-width:0}
-.hide{display:none}.stuck{color:#9b2c2c;font-weight:700}.tips{font-size:12px;color:#445;background:#f3f6fa;border-radius:5px;padding:3px 6px;margin:3px 0}.tchk{font-size:12px;margin-left:6px}.tchk.ok{color:#2d6a3e}.tchk.no{color:#9b2c2c}.internal{background:#f1ecfa;border:1px dashed #7a5bb0}#check li{margin:2px 0}.pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pick select{font-size:16px;padding:5px;max-width:100%}
+.hide{display:none}.ent.retired{border:2px solid #9b2c2c;background:#fff6f6}.recode{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.stuck{color:#9b2c2c;font-weight:700}.tips{font-size:12px;color:#445;background:#f3f6fa;border-radius:5px;padding:3px 6px;margin:3px 0}.tchk{font-size:12px;margin-left:6px}.tchk.ok{color:#2d6a3e}.tchk.no{color:#9b2c2c}.internal{background:#f1ecfa;border:1px dashed #7a5bb0}#check li{margin:2px 0}.pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pick select{font-size:16px;padding:5px;max-width:100%}
 /* ---- desktop / wide layout (same page, same data) ---- */
 html.wide body{font-size:15px}html.wide section{margin:10px 20px}
 html.wide .cols{grid-template-columns:minmax(520px,1fr) minmax(560px,1.25fr);align-items:start}
@@ -39,7 +39,7 @@ html.phone .cols{grid-template-columns:1fr}
 if(!f){window.matchMedia("(min-width:1024px)").addEventListener("change",function(e){var c=document.documentElement.classList;c.toggle("wide",e.matches);c.toggle("phone",!e.matches);var t=document.getElementById("layout-tag");if(t)t.textContent=e.matches?"Desktop layout":"Phone layout";});}})();</script></head><body>
 <div class="banner" id="nojs-banner"><b>This form isn't running here.</b> You're probably looking at an email or file preview. Open the link in Safari or Chrome.</div>
 <div class="banner hide" id="store-banner">⚠ This browser won't let the page save. Your work will be lost when you close it. Use Safari or Chrome (not a private window), or Download project file often.</div>
-<header><h1>Delta Level 2 Scoping · Room-Walk v4 (TEST)</h1><div class="s">The only Scope App version (v1.7 features + room walk). One page for phone and desktop<span id="layout-tag"></span>. Does not touch JobTread. Rule: a new row starts only when the Action or Material changes. The same item in several rooms stays on one row; room detail lives in the room detail column, callout tags and photo pins.</div></header>
+<header><h1>Delta Level 2 Scoping · Room-Walk v4.1 (TEST)</h1><div class="s">The only Scope App version (v1.7 features + room walk). One page for phone and desktop<span id="layout-tag"></span>. Does not touch JobTread. Rule: a new row starts only when the Action or Material changes. The same item in several rooms stays on one row; room detail lives in the room detail column, callout tags and photo pins.</div></header>
 <div id="nojob" class="banner hide"></div>
 <nav class="tabs"><button data-tab="job" class="cur">Job</button><button data-tab="walk">Walk &amp; table</button><button data-tab="vis">Photos &amp; pins</button></nav>
 <div class="bar"><button class="ok" id="b-xlsx">Export .xlsx</button><button class="ok" id="b-csv">Export CSV</button><button id="b-print">Print visuals</button><button id="b-vhtml">Download visuals page</button><button id="b-check">Check complete</button><button id="b-rev">Start revision</button><button id="b-save">Download project file</button><button id="b-share">Send project file</button><button id="b-tnotes" class="internal" title="Internal only: estimating aid, not a schedule commitment">Internal: estimating notes (time)</button><label style="align-self:center"><button id="b-open" type="button">Open project file</button><input id="f-open" type="file" accept=".json,application/json,text/plain" class="hide"></label><details style="align-self:center"><summary class="hint">Training</summary><button id="b-sample">Load sample job</button></details><span id="saved" class="hint" style="align-self:center"></span></div>
@@ -176,16 +176,21 @@ function xlsxStyles(){
    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs>'+
    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
   return styles; }
-var CODES = [["GC","General Conditions / GC"],["FRAM","Framing"],["MECH","Mechanical / HVAC"],["PLUMB","Plumbing"],["ELEC","Electrical"],["INSUL","Insulation"],["DRY","Drywall"],["TRIM","Trim / millwork"],["TILE","Tile"],["FLR","Flooring (non-tile)"],["DOOR","Doors"],["PNT","Paint"],["DEMO","Demolition"],["ROOF","Roofing"],["EXT","Exterior / siding / openings"],["CAB","Cabinets"],["CLN","Cleaning / contents"],["MIT","Mitigation / dry-out"]];
-var CODE_NAME={},CODE_ORD={};CODES.forEach(function(c,i){CODE_NAME[c[0]]=c[1];CODE_ORD[c[0]]=i;});
+var CODES = [["GC","General Conditions / GC"],["FRAM","Framing"],["MECH","Mechanical / HVAC"],["PLUMB","Plumbing"],["ELEC","Electrical"],["INSUL","Insulation"],["DRY","Drywall"],["TRIM","Trim / millwork"],["TILE","Tile"],["FLR","Flooring (non-tile)"],["DOOR","Doors"],["PNT","Paint"],["DEMO","Demolition"],["ROOF","Roofing"],["CAB","Cabinets"],["CLN","Cleaning / contents"],["MIT","Mitigation / dry-out"],["SDG","Siding"],["SFG","Fascia / soffit / gutter"],["MSN","Masonry"],["CNC","Concrete"],["WD","Windows"]];
+// Retired codes (Ben, Oct 29): kept only so old rows still show; never offered for new rows, never remapped silently.
+var RETIRED={EXT:"Exterior / siding / openings (retired Oct 29)"};
+var CODE_NAME={},CODE_ORD={};CODES.forEach(function(c,i){CODE_NAME[c[0]]=c[1];CODE_ORD[c[0]]=i;});Object.keys(RETIRED).forEach(function(k,i){CODE_NAME[k]=RETIRED[k];CODE_ORD[k]=900+i;});
+function isRetired(tr){return !!RETIRED[tr];}
+// Interior / Exterior is a location differentiator on each row, not a trade: taken from the area (Exterior North/East/South/West = Exterior), with an optional per-entry override.
+function sideOf(e){return e.side==="Interior"||e.side==="Exterior"?e.side:(/^\s*exterior\b/i.test(e.room||"")?"Exterior":"Interior");}
 var ACTIONS=["remove only","install only","remove and replace","replace","detach & reset","clean/treat","n/a"];
 var STATUSES=["known","assumed","hold","contingent"];
 var CAPST=["Done","Pending","Not needed"];
 var VKINDS=["HOVER elevation","Sketch","Photo"];
 var UNITS=["SF","LF","SY","EA","LS","Set","HR"];
 var ENTITIES=["Delta Dry","McMurray Contracting","DCS","Delta Solutions"];
-var TABLE_COLS=["Callout ID(s)","Trade / code","Cost Group","Action","Location","Qty","Unit","Material","Finish","Status","Note","Selection","Room detail (room · qty · finish)","Callout tags (pins)","Base total","Assumption basis"];
-var VERSION="roomwalk-test-v4";
+var TABLE_COLS=["Callout ID(s)","Trade / code","Cost Group","Action","Location","Interior / Exterior","Qty","Unit","Material","Finish","Status","Note","Selection","Room detail (room · qty · finish)","Callout tags (pins)","Base total","Assumption basis"];
+var VERSION="roomwalk-test-v4.1";
 var K="delta-roomwalk-test-v4",KP=K+":p:",K3="delta-roomwalk-test-v3";
 function $(id){return document.getElementById(id);}
 function t(s){return (s==null?"":String(s)).trim();}
@@ -194,7 +199,7 @@ function num(s){return parseFloat(t(s).replace(/,/g,""));}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
 function newPid(){return "j"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function blank(){return {v:4,pid:newPid(),rev:1,prior:null,check:null,tchk:{},sources:[],job:{name:"",number:"",entity:"",inspector:"",landing:"",damage:"",extaid:"",onedrive:"",client:"",referral:"",address:"",claim:"",stated:"",remote:"",intplan:"",inspdate:"",reportref:""},capture:{matterport:{status:"",link:""},hover:{status:"",link:""},photos:{status:"",link:""}},mdec:{},trades:[],rooms:[],entries:[],photos:[],cur:null,vcur:null,seq:0,pseq:0};}
-function fix(s){var b=blank();s=s||{};Object.keys(b).forEach(function(k){if(s[k]===undefined)s[k]=b[k];});Object.keys(b.job).forEach(function(k){if(s.job[k]===undefined)s.job[k]="";});delete s.job.findings;Object.keys(b.capture).forEach(function(k){if(!s.capture[k])s.capture[k]={status:"",link:""};});s.entries.forEach(function(e){["selection","fnote","tnote"].forEach(function(k){if(e[k]===undefined)e[k]="";});if(e.stuck===undefined)e.stuck=false;});return s;}
+function fix(s){var b=blank();s=s||{};Object.keys(b).forEach(function(k){if(s[k]===undefined)s[k]=b[k];});Object.keys(b.job).forEach(function(k){if(s.job[k]===undefined)s.job[k]="";});delete s.job.findings;Object.keys(b.capture).forEach(function(k){if(!s.capture[k])s.capture[k]={status:"",link:""};});s.entries.forEach(function(e){["selection","fnote","tnote"].forEach(function(k){if(e[k]===undefined)e[k]="";});if(e.stuck===undefined)e.stuck=false;if(e.side===undefined)e.side="";});s.trades=(s.trades||[]).filter(function(x){return !RETIRED[x];});return s;}
 var STORE_OK=true;try{localStorage.setItem(K+":t","1");localStorage.removeItem(K+":t");}catch(e){STORE_OK=false;}
 function idxGet(){try{var o=JSON.parse(localStorage.getItem(K)||"null");if(o&&o.list)return o;}catch(e){}return {cur:null,list:[],v3:false};}
 function idxPut(o){try{localStorage.setItem(K,JSON.stringify(o));}catch(e){}}
@@ -254,7 +259,7 @@ function dbLoadAll(cb){if(!DB)return cb();var n=S.photos.length;if(!n)return cb(
 function save(){try{localStorage.setItem(KP+S.pid,JSON.stringify(S));IDX.cur=S.pid;var L=IDX.list.filter(function(x){return x.id===S.pid;})[0];if(!L){L={id:S.pid};IDX.list.push(L);}L.name=S.job.name;L.number=S.job.number;L.at=new Date().toISOString();idxPut(IDX);$("saved").textContent="Saved on this device "+new Date().toLocaleTimeString();}catch(e){$("saved").innerHTML='<span class="flag">Couldn\'t save on this device. Download project file now.</span>';$("store-banner").classList.remove("hide");}}
 function renderPick(){$("p-pick").innerHTML=IDX.list.slice().sort(function(a,b){return (b.at||"").localeCompare(a.at||"");}).map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===S.pid?' selected':'')+'>'+esc(([x.number,x.name].filter(Boolean).join(" ")||"(unnamed job)"))+'</option>';}).join("");}
 function switchTo(id){var o=pGet(id);if(!o)return;S=fix(o);IMG={};save();dbLoadAll(function(){all();});all();}
-function newEnt(room,trade){S.seq++;return {id:"e"+S.seq,room:room,trade:trade,action:"",material:"",qty:"",unit:"",finish:"",status:"",hold:"",note:"",selection:"",stuck:false,fnote:"",tnote:""};}
+function newEnt(room,trade){S.seq++;return {id:"e"+S.seq,room:room,trade:trade,action:"",material:"",qty:"",unit:"",finish:"",status:"",hold:"",note:"",selection:"",stuck:false,fnote:"",tnote:"",side:""};}
 function opts(list,v,ph){return '<option value="">'+ph+'</option>'+list.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join("");}
 // ---- name matching: case, spaces, punctuation, small typos ----
 function norm(s){return t(s).toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9\/]/g,"");}
@@ -306,7 +311,11 @@ function micTap(id){var e=entryById(id);if(!e||MIC_BUSY)return;var SR=window.Spe
   r.onresult=function(ev){apply(ev.results[0][0].transcript);};r.onerror=function(){alert("Voice input stopped. Type the quantity instead.");};r.onend=function(){MIC_BUSY=false;var bb=document.querySelector('[data-mic="'+id+'"]');if(bb)bb.textContent="🎤";};
   try{r.start();}catch(err){MIC_BUSY=false;}}
 function tipsFor(tr){var tp=["New row only when the Action or the Material changes."];
-  if(tr==="PNT")tp.push("Paint = replace (a new coat with materials).");
+  if(tr==="PNT")tp.push("Paint = replace (a new coat with materials). Interior vs exterior paint comes from the area / Interior-Exterior field, not a separate code.");
+  if(tr==="DOOR")tp.push("Doors and shower doors. Windows go to WD.");
+  if(tr==="WD")tp.push("Windows (moved out of DOOR / EXT).");
+  if(tr==="SDG")tp.push("Siding. Log it on an Exterior area.");
+  if(tr==="SFG")tp.push("Fascia, soffit and gutters.");
   if(tr==="GC")tp.push("GC Item = what it is (supervision, dumpster, permit, floor protection), not hours or cost. n/a is GC only.");
   if(tr==="DEMO")tp.push("Demo = remove only.");
   if(tr==="MIT")tp.push("Microbial clean/treat uses clean/treat. Crawl debris is a normal row (e.g. remove only).");
@@ -324,14 +333,15 @@ function renderWalk(){
   var w=$("walk");
   if(!S.cur||S.rooms.indexOf(S.cur)<0){w.innerHTML='<p class="hint">Pick a room above. You will see only the trades picked in Setup.</p>';return;}
   var h='',R=rollup();
-  S.trades.slice().sort(function(a,b){return CODE_ORD[a]-CODE_ORD[b];}).forEach(function(tr){
+  (function(){var L=S.trades.slice();S.entries.forEach(function(e){if(e.room===S.cur&&L.indexOf(e.trade)<0)L.push(e.trade);});return L;})().sort(function(a,b){return CODE_ORD[a]-CODE_ORD[b];}).forEach(function(tr){
     var es=S.entries.filter(function(e){return e.room===S.cur&&e.trade===tr;});
     var ts=tState(S.cur,tr);
-    h+='<div style="margin-top:8px"><b>'+tr+' · '+esc(CODE_NAME[tr])+'</b> <button data-add="'+tr+'">+ entry</button>'+(es.length?'<span class="tchk ok">✓ has items</span>':(ts==="none"?'<span class="tchk ok">✓ nothing here</span> <a href="#" data-none="'+tr+'">undo</a>':' <button data-none="'+tr+'">Nothing here</button><span class="tchk no">not checked</span>'))+'</div><div class="tips">'+esc(tipsFor(tr).join(" · "))+'</div>';
+    if(isRetired(tr)){h+='<div style="margin-top:8px"><b>'+tr+' · '+esc(CODE_NAME[tr])+'</b> <span class="flag">Re-code: '+tr+' retired</span></div><div class="tips">Pick the new trade on each entry below. Nothing is changed until you pick. Inside/outside comes from the area.</div>';}
+    else h+='<div style="margin-top:8px"><b>'+tr+' · '+esc(CODE_NAME[tr])+'</b> <button data-add="'+tr+'">+ entry</button>'+(es.length?'<span class="tchk ok">✓ has items</span>':(ts==="none"?'<span class="tchk ok">✓ nothing here</span> <a href="#" data-none="'+tr+'">undo</a>':' <button data-none="'+tr+'">Nothing here</button><span class="tchk no">not checked</span>'))+'</div><div class="tips">'+esc(tipsFor(tr).join(" · "))+'</div>';
     es.forEach(function(e){
-      h+='<div class="ent" data-id="'+e.id+'"><div class="tr"><span>'+esc(S.cur)+' · '+tr+(R.byEntry[e.id]?' · row '+R.byEntry[e.id]:'')+'</span><a href="#" data-del="'+e.id+'">remove entry</a></div>'+
+      h+='<div class="ent'+(isRetired(tr)?' retired':'')+'" data-id="'+e.id+'">'+(isRetired(tr)?'<div class="w4 recode"><span class="flag">⚑ Re-code: '+tr+' retired</span> <select data-recode="'+e.id+'" aria-label="Pick a new trade code"><option value="">Pick new code…</option>'+CODES.map(function(c){return '<option value="'+c[0]+'">'+c[0]+' · '+esc(c[1])+'</option>';}).join("")+'</select></div>':'')+'<div class="tr"><span>'+esc(S.cur)+' · '+tr+' · '+sideOf(e)+(R.byEntry[e.id]?' · row '+R.byEntry[e.id]:'')+'</span><a href="#" data-del="'+e.id+'">remove entry</a></div>'+
       '<div class="w2"><div class="lbl">Action</div><select data-f="action">'+actOpts(tr,e.action)+'</select></div>'+
-      '<div class="w2"><div class="lbl">Material / Item (one per entry) <span title="'+esc(MATERIAL_HELP)+'">ⓘ</span></div><input data-f="material" value="'+esc(e.material)+'"></div>'+
+      '<div><div class="lbl">Interior / Exterior</div><select data-f="side"><option value=""'+(!e.side?' selected':'')+'>Auto: '+(/^\s*exterior\b/i.test(e.room||"")?"Exterior":"Interior")+' (area)</option><option'+(e.side==="Interior"?' selected':'')+'>Interior</option><option'+(e.side==="Exterior"?' selected':'')+'>Exterior</option></select></div>'+'<div class="w2"><div class="lbl">Material / Item (one per entry) <span title="'+esc(MATERIAL_HELP)+'">ⓘ</span></div><input data-f="material" value="'+esc(e.material)+'"></div>'+
       '<div><div class="lbl">Qty'+(e.status==="contingent"?' (may be blank)':'')+'</div><span style="display:flex;gap:3px"><input data-f="qty" inputmode="decimal" style="flex:1;min-width:0" value="'+esc(e.qty)+'"><button type="button" data-mic="'+e.id+'" title="Optional: tap, then say the quantity" style="padding:4px 7px">🎤</button></span></div>'+
       '<div><div class="lbl">Unit</div><select data-f="unit">'+opts(UNITS,e.unit,"Unit…")+'</select></div>'+
       '<div class="w2"><div class="lbl">Finish (like-kind baseline)</div><input data-f="finish" value="'+esc(e.finish)+'"></div>'+
@@ -343,7 +353,7 @@ function renderWalk(){
       '<div class="w4 internal" style="padding:3px"><div class="lbl">Estimating note (time) · INTERNAL estimating aid only, not a schedule commitment · never in the plan set or client exports</div><input data-f="tnote" value="'+esc(e.tnote)+'"></div></div>';
     });
   });
-  if(!S.trades.length) h='<p class="hint">No trades picked in Setup yet.</p>';
+  if(!S.trades.length&&!h) h='<p class="hint">No trades picked in Setup yet.</p>';
   w.innerHTML=h;
 }
 var MATERIAL_HELP = "Material if the thing is defined by what it's made of (e.g., LVP, hardwood, carpet, tile, drywall, paint). Item if it's a fixture or assembly (e.g., base cabinets, upper cabinets, countertops, toilet, sink, electrical panel, fixture).";
@@ -368,19 +378,19 @@ function rollup(){
   S.entries.forEach(function(e){
     if(!e.action&&!t(e.material)&&!t(e.qty)&&!t(e.finish)&&!t(e.note)&&!t(e.hold)){empty.push(e);return;} // untouched blank entry
     var a=normAct(e.action),bk=bucketOf(e),g=null;
-    for(var i=0;i<groups.length;i++){var G=groups[i];if(G.trade===e.trade&&G.action===a&&G.bucket===bk&&(t(e.material)?same(G.material,e.material):!t(G.material))){g=G;break;}}
-    if(!g){g={trade:e.trade,action:a,bucket:bk,material:t(e.material),ents:[],names:[],confirmed:[]};groups.push(g);}
+    for(var i=0;i<groups.length;i++){var G=groups[i];if(G.trade===e.trade&&G.side===sideOf(e)&&G.action===a&&G.bucket===bk&&(t(e.material)?same(G.material,e.material):!t(G.material))){g=G;break;}}
+    if(!g){g={trade:e.trade,side:sideOf(e),action:a,bucket:bk,material:t(e.material),ents:[],names:[],confirmed:[]};groups.push(g);}
     g.ents.push(e); if(t(e.material)&&g.names.indexOf(t(e.material))<0)g.names.push(t(e.material));
   });
   var sugg=[];
   for(var i=0;i<groups.length;i++)for(var j=i+1;j<groups.length;j++){var G=groups[i],H=groups[j];
-    if(G.dead||H.dead||G.trade!==H.trade||G.action!==H.action||G.bucket!==H.bucket||!G.material||!H.material||!near(G.material,H.material))continue;
+    if(G.dead||H.dead||G.trade!==H.trade||G.side!==H.side||G.action!==H.action||G.bucket!==H.bucket||!G.material||!H.material||!near(G.material,H.material))continue;
     var k=pairKey(G,H),dec=S.mdec[k];
     if(dec==="merge"){G.ents=G.ents.concat(H.ents);H.names.forEach(function(n){if(G.names.indexOf(n)<0)G.names.push(n);});G.confirmed.push(H.material);H.dead=true;}
     else if(!dec)sugg.push({key:k,a:G,b:H});}
   groups=groups.filter(function(g){return !g.dead;});
   groups.forEach(function(g,i){g.ix=i;});
-  groups.sort(function(a,b){return (BORD[a.bucket]-BORD[b.bucket])||(CODE_ORD[a.trade]-CODE_ORD[b.trade])||(a.ix-b.ix);});
+  groups.sort(function(a,b){return (BORD[a.bucket]-BORD[b.bucket])||(CODE_ORD[a.trade]-CODE_ORD[b.trade])||((a.side==="Exterior")-(b.side==="Exterior"))||(a.ix-b.ix);});
   var byEntry={},pinsByEntry={};
   S.photos.forEach(function(p){p.pins.forEach(function(pn){if(pn.entry){(pinsByEntry[pn.entry]=pinsByEntry[pn.entry]||[]).push("V"+photoNo(p)+"-"+pn.n);}});});
   var rows=groups.map(function(g,i){
@@ -388,6 +398,7 @@ function rollup(){
     var rooms=[];g.ents.forEach(function(e){if(rooms.indexOf(e.room)<0)rooms.push(e.room);});
     rooms.sort(function(a,b){return S.rooms.indexOf(a)-S.rooms.indexOf(b);});
     var units={},blankQ=false,nonNum=false,flags=[],info=[];
+    if(isRetired(g.trade))flags.push("RE-CODE: "+g.trade+" retired (pick a new trade code)");
     if(!g.action)flags.push("ACTION MISSING ("+g.ents.map(function(e){return e.room;}).join(", ")+")");
     if(!g.material)flags.push("MATERIAL MISSING");
     var badNum=false,rng=[],zero=[];
@@ -424,14 +435,14 @@ function rollup(){
     var detail=g.ents.map(function(e){return e.room+" · "+(t(e.qty)||"?")+" "+(e.unit||"")+(t(e.finish)?" · "+t(e.finish):"")+(t(e.material)!==g.material&&t(e.material)?" · ("+t(e.material)+")":"");}).join("; ");
     var sels=[];g.ents.forEach(function(e){var v=t(e.selection);if(v&&sels.indexOf(v)<0)sels.push(v);});
     var tags=[];g.ents.forEach(function(e){(pinsByEntry[e.id]||[]).forEach(function(x){tags.push(x+" ("+e.room+")");});});
-    return {callout:id,trade:g.trade,action:g.action,location:rooms.join("; "),qty:qty,unit:unit,material:g.material,finish:finish,status:st,note:noteTxt,selection:sels.join("; "),detail:detail,tags:tags.join("; "),base:BASE[g.bucket],basis:(function(){var b=[];g.ents.forEach(function(e){var x=basisOf(e);if(x&&b.indexOf(x)<0)b.push(x);});return b.join("; ");})(),bucket:g.bucket,flags:flags,n:g.ents.length,ents:g.ents.map(function(e){return e.id;})};
+    return {callout:id,trade:g.trade,side:g.side,action:g.action,location:rooms.join("; "),qty:qty,unit:unit,material:g.material,finish:finish,status:st,note:noteTxt,selection:sels.join("; "),detail:detail,tags:tags.join("; "),base:BASE[g.bucket],basis:(function(){var b=[];g.ents.forEach(function(e){var x=basisOf(e);if(x&&b.indexOf(x)<0)b.push(x);});return b.join("; ");})(),bucket:g.bucket,flags:flags,n:g.ents.length,ents:g.ents.map(function(e){return e.id;})};
   });
   var sg=sugg.map(function(x){return {key:x.key,rowA:x.a.id,rowB:x.b.id,matA:x.a.material,matB:x.b.material,trade:x.a.trade,action:x.a.action};});
   return {rows:rows,empty:empty,byEntry:byEntry,suggest:sg};
 }
 var SECT={O:"OPTION: TBD · excluded from the base total",C:"CONTINGENT · excluded from the base total · scoped and priced when exposed"};
 function sectioned(rows){var out=[],last="B";rows.forEach(function(r){if(r.bucket!==last&&r.bucket!=="B"){out.push({sec:SECT[r.bucket]});last=r.bucket;}out.push({row:r});});return out;}
-function tableRows(rows){return rows.map(function(r){return [r.callout,r.trade,CODE_NAME[r.trade]||"",r.action,r.location,r.qty,r.unit,r.material,r.finish,r.status,r.note,r.selection,r.detail,r.tags,r.base,r.basis];});}
+function tableRows(rows){return rows.map(function(r){return [r.callout,r.trade,CODE_NAME[r.trade]||"",r.action,r.location,r.side,r.qty,r.unit,r.material,r.finish,r.status,r.note,r.selection,r.detail,r.tags,r.base,r.basis];});}
 function renderTable(){
   var R=rollup(),rows=R.rows,used=S.entries.length-R.empty.length;
   var mm=rows.filter(function(r){return r.unit==="MIXED";}).length,hold=rows.filter(function(r){return r.status==="hold";}).length,fl=rows.filter(function(r){return r.flags.length;}).length;
@@ -482,6 +493,7 @@ function checkList(){var R=rollup(),P=[];
   R.rows.forEach(function(r){r.flags.forEach(function(f){P.push(["Row "+r.callout+" ("+r.trade+" · "+(r.material||"?")+")",f]);});});
   R.suggest.forEach(function(x){P.push(["Merge?","Rows "+x.rowA+" and "+x.rowB+": decide 'Probably the same?'"]);});
   sweep().forEach(function(x){P.push(["Trade sweep",x]);});
+  S.entries.forEach(function(e){if(isRetired(e.trade))P.push(["Re-code",e.room+" · "+e.trade+" · "+(t(e.material)||"(blank entry)")+": Re-code: "+e.trade+" retired, pick a new trade code"]);});
   S.photos.forEach(function(p){p.pins.forEach(function(pn){if(!pn.entry)P.push(["Pins","V"+photoNo(p)+"-"+pn.n+" isn't tied to an entry"]);});});
   S.entries.forEach(function(e){if(e.stuck)P.push(["⚑ Stuck",e.room+" · "+e.trade+" · "+(t(e.material)||"?")+": "+(t(e.fnote)||"(no note)")]);});
   if(!S.rows&&!R.rows.length)P.push(["Rows","No scope rows yet."]);
@@ -500,6 +512,7 @@ document.addEventListener("keydown",function(ev){if(ev.key!=="Enter"||ev.isCompo
   var e=entryById(box.dataset.id);if(!e)return;ev.preventDefault();el.dispatchEvent(new Event("change",{bubbles:true}));var ne=newEnt(e.room||S.cur,e.trade);S.entries.push(ne);changed();renderWalk();renderTable();
   var nb=document.querySelector('.ent[data-id="'+ne.id+'"]');var f=nb&&nb.querySelector("select,input");if(f){f.focus();try{nb.scrollIntoView({block:"nearest"});}catch(x){}}});
 document.addEventListener("change",function(ev){var el=ev.target;
+  if(el.dataset&&el.dataset.recode){var e=entryById(el.dataset.recode);if(e&&el.value&&CODE_NAME[el.value]&&!isRetired(el.value)){e.recodedFrom=e.trade;e.trade=el.value;if(S.trades.indexOf(el.value)<0)S.trades.push(el.value);changed();renderSetup();renderWalk();renderTable();renderCheck();}return;}
   if(el.dataset.j||el.dataset.cap||el.dataset.src)return;
   if(el.id==="c-attest"){S.check.attest=el.checked;save();renderCheck();return;}
   if(el.id==="p-pick"){switchTo(el.value);return;}
@@ -549,7 +562,7 @@ function shareProject(){var name=fileBase()+"_project.json",data=projectJson(),f
   return "share";}
 $("b-share").onclick=function(){shareProject();};
 $("b-sample").onclick=function(){
-  save();S=blank();IMG={}; Object.assign(S.job,{name:"Sample Job",number:"00-000",entity:"Delta Dry",inspector:"Sample",landing:"JobTread › Files",extaid:"HOVER",damage:"No"}); S.trades=["DRY","TRIM","PNT","EXT"]; S.rooms=["Kitchen","Living Room","Hall","Bedroom 1","Exterior North (front)","Exterior South (rear)"]; S.cur="Kitchen"; S.vcur="Kitchen";
+  save();S=blank();IMG={}; Object.assign(S.job,{name:"Sample Job",number:"00-000",entity:"Delta Dry",inspector:"Sample",landing:"JobTread › Files",extaid:"HOVER",damage:"No"}); S.trades=["DRY","TRIM","PNT","SDG"]; S.rooms=["Kitchen","Living Room","Hall","Bedroom 1","Exterior North (front)","Exterior South (rear)"]; S.cur="Kitchen"; S.vcur="Kitchen";
   function E(room,trade,action,material,qty,unit,status,hold,note,finish){var e=newEnt(room,trade);e.action=action;e.material=material;e.qty=qty;e.unit=unit;e.status=status;e.hold=hold||"";e.note=note||"";e.finish=finish||"";S.entries.push(e);}
   E("Kitchen","DRY","remove and replace","1/2\" drywall, walls","120","SF","known","","","Smooth, match existing");
   E("Living Room","DRY","remove and replace","1/2\" Drywall walls","200","SF","known","","","smooth match existing");
@@ -561,8 +574,8 @@ $("b-sample").onclick=function(){
   E("Kitchen","PNT","replace","Wall paint, 2 coats","120","SF","known");
   E("Living Room","PNT","replace","Wall paint, 2 coats","200","SF","known");
   E("Bedroom 1","PNT","replace","Wall paint, 2 coats","300","SF","hold","Pending moisture readings in Bedroom 1");
-  E("Exterior North (front)","EXT","remove and replace","Vinyl siding, Dutch lap","200","SF","known");
-  E("Exterior South (rear)","EXT","remove and replace","Vinyl siding, Dutch lap","150","SF","known");
+  E("Exterior North (front)","SDG","remove and replace","Vinyl siding, Dutch lap","200","SF","known");
+  E("Exterior South (rear)","SDG","remove and replace","Vinyl siding, Dutch lap","150","SF","known");
   save();all();};
 function stamp(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
 function clean(v){return t(v).replace(/[^A-Za-z0-9 _-]/g,"").replace(/\s+/g,"_");}
@@ -570,9 +583,9 @@ function fileBase(){var no=clean(S.job.number),nm=clean(S.job.name),pre=(no&&nm)
 function download(name,mime,data){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}
 function csvRows(){var rows=rollup().rows;return [TABLE_COLS].concat(sectioned(rows).map(function(it){return it.sec?["— "+it.sec+" —"]:tableRows([it.row])[0];}));}
 function csvText(){var j=S.job;var c=S.capture,cs=function(k){return [CAPNAME[k],c[k].status||"(not set)",c[k].link];};var pre=[["Job",j.name],["Job number",j.number],["Entity",j.entity],["Inspector",j.inspector],["Landing spot",j.landing],["Damage job",j.damage],["Exterior visual aid",j.extaid],cs("matterport"),cs("hover"),cs("photos"),["OneDrive job folder",j.onedrive||"(placeholder: not decided)"]].concat(noJob()?[["⚠ NOJOB","Admin hasn't filled in the job "+noJob()]]:[]).concat([[]]);return pre.concat(csvRows()).map(function(row){return row.map(function(c){var s=String(c==null?"":c);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");}).join("\r\n");}
-function entriesSheet(){var hdr=["Room","Trade / code","Action","Material","Qty","Unit","Finish","Status","Reason","Assumption basis","Note","Selection","→ Callout ID","Pins"];var R=rollup(),pins={};
+function entriesSheet(){var hdr=["Room","Interior / Exterior","Trade / code","Action","Material","Qty","Unit","Finish","Status","Reason","Assumption basis","Note","Selection","→ Callout ID","Pins","Flag"];var R=rollup(),pins={};
   S.photos.forEach(function(p){p.pins.forEach(function(pn){if(pn.entry)(pins[pn.entry]=pins[pn.entry]||[]).push("V"+photoNo(p)+"-"+pn.n);});});
-  return [{cells:hdr,style:1}].concat(S.entries.filter(function(e){return R.byEntry[e.id];}).map(function(e){return {cells:[e.room,e.trade,e.action,t(e.material),isNum(e.qty)?num(e.qty):t(e.qty),e.unit,t(e.finish),e.status,t(e.hold),basisOf(e),t(e.note),t(e.selection),R.byEntry[e.id],(pins[e.id]||[]).join(", ")],style:e.status==="hold"?3:2};}));}
+  return [{cells:hdr,style:1}].concat(S.entries.filter(function(e){return R.byEntry[e.id]||isRetired(e.trade);}).map(function(e){return {cells:[e.room,sideOf(e),e.trade,e.action,t(e.material),isNum(e.qty)?num(e.qty):t(e.qty),e.unit,t(e.finish),e.status,t(e.hold),basisOf(e),t(e.note),t(e.selection),R.byEntry[e.id]||"",(pins[e.id]||[]).join(", "),isRetired(e.trade)?"Re-code: "+e.trade+" retired":""],style:e.status==="hold"?3:2};}));}
 function snapRows(){return rollup().rows.map(function(r){return {key:[r.trade,r.action,norm(r.material),r.bucket].join("|"),callout:r.callout,trade:r.trade,action:r.action,material:r.material,location:r.location,qty:String(r.qty),unit:r.unit,finish:r.finish,status:r.status,selection:r.selection,base:r.base};});}
 function changesRows(){if(!S.prior)return [];var A={},B={},out=[];S.prior.rows.forEach(function(r){A[r.key]=r;});snapRows().forEach(function(r){B[r.key]=r;});
   Object.keys(B).forEach(function(k){var b=B[k],a=A[k];if(!a){out.push(["Added",b.callout,b.trade,b.action,b.material,"","",b.qty+" "+b.unit+" · "+b.status+" · "+b.base]);return;}["location","qty","unit","finish","status","selection","base"].forEach(function(f){if(String(a[f])!==String(b[f]))out.push(["Changed",b.callout,b.trade,b.action,b.material,f,a[f],b[f]]);});});
@@ -588,7 +601,7 @@ function buildXlsx(){
    {name:"Plan set table",xml:sheetXml([{cells:TABLE_COLS,style:1}].concat(SR.map(function(it){return it.sec?{cells:[it.sec],style:5}:{cells:tableRows([it.row])[0],style:it.row.status==="hold"?3:2};})),{tab0:true,freeze:true,widths:WID,filter:"A1:P"+(SR.length+1),landscape:true})},
    {name:"Job",xml:sheetXml(jobSheet(),{widths:[26,50]})},
    {name:"Capture",xml:sheetXml(capSheet(),{widths:[20,12,50,36,36]})},
-   {name:"Room entries",xml:sheetXml(entriesSheet(),{freeze:true,widths:[16,10,18,26,8,7,22,10,30,20,30,16,10,14]})},
+   {name:"Room entries",xml:sheetXml(entriesSheet(),{freeze:true,widths:[16,11,10,18,26,8,7,22,10,30,20,30,16,10,14,22]})},
    {name:"Visuals",xml:sheetXml(visSheet(),{freeze:true,widths:[8,16,22,16,6,10,10,40,16,26,8,8]})},
    {name:"Field notes & flags",xml:sheetXml(notesSheet(),{freeze:true,widths:[16,8,26,10,9,60]})}];
   if(S.prior)sheets.push({name:"Changes vs v"+S.prior.rev,xml:sheetXml([{cells:["Change","Callout ID","Trade","Action","Material / Item","Field","Was (v"+S.prior.rev+")","Now (v"+S.rev+")"],style:1}].concat(changesRows().map(function(c){return {cells:c,style:2};})),{freeze:true,widths:[10,9,8,16,28,10,30,30]})});
@@ -610,7 +623,7 @@ $("b-print").onclick=function(){var w=window.open("","_blank");if(!w){alert("All
 $("b-save").onclick=function(){download(fileBase()+"_project.json","application/json",projectJson());};
 $("b-open").onclick=function(){$("f-open").click();};
 $("f-open").onchange=function(){var f=this.files[0],inp=this;if(!f)return;var fr=new FileReader();fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.kind==="delta-scope-backup"){var ks=o.keys||{};var add=runImport(function(k){return ks[k]==null?null:ks[k];},Object.keys(ks),o.images||{});if(add.length){save();switchTo(add[add.length-1]);v3Images(function(){all();});}alert(add.length?"Imported "+add.length+" job(s) from the backup. Pick them under Job.":"Nothing new in that backup: those jobs are already on this device.");inp.value="";return;}if(o.kind!=="delta-roomwalk-project")throw 0;loadProject(o);}catch(e){alert("That isn't a room-walk project file.");}inp.value="";};fr.readAsText(f);};
-window.__rw={layout:function(){return document.documentElement.classList.contains("wide")?"desktop":"phone";},micTap:micTap,checkList:checkList,sweep:sweep,changesRows:changesRows,tnotesCsv:tnotesCsv,spokenQty:spokenQty,idx:function(){return IDX;},switchTo:switchTo,LKQ_PRE:LKQ_PRE,near:near,fileBase:fileBase,capSheet:capSheet,version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);if(!st.pid)S.pid=newPid();save();all();},same:same,render:all,setTab:setTab};
+window.__rw={codes:function(){return CODES;},sideOf:sideOf,layout:function(){return document.documentElement.classList.contains("wide")?"desktop":"phone";},micTap:micTap,checkList:checkList,sweep:sweep,changesRows:changesRows,tnotesCsv:tnotesCsv,spokenQty:spokenQty,idx:function(){return IDX;},switchTo:switchTo,LKQ_PRE:LKQ_PRE,near:near,fileBase:fileBase,capSheet:capSheet,version:VERSION,rollup:rollup,csvText:csvText,buildXlsx:buildXlsx,visualsHtml:visualsHtml,visRows:visRows,addPhoto:addPhoto,addPin:addPin,state:function(){return S;},load:function(st){S=fix(st);if(!st.pid)S.pid=newPid();save();all();},same:same,render:all,setTab:setTab};
 $("nojs-banner").style.display="none";
 if(!STORE_OK)$("store-banner").classList.remove("hide");
 window.addEventListener("error",function(e){var b=$("nojs-banner");b.style.display="";b.innerHTML="<b>The form hit an error.</b> Download project file now, then reload. Details: "+esc(e.message||"");});
